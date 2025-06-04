@@ -1,71 +1,80 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Shield, ArrowLeft } from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/components/auth-context"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Shield, ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/components/auth-context";
 
 export default function SignInPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
-  const { toast } = useToast()
-  const { login, isAuthenticated } = useAuth()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const { toast } = useToast();
+  const { login, isAuthenticated } = useAuth();
 
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      router.push("/dashboard")
+      router.push("/dashboard");
     }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     try {
-      const success = await login(email, password)
+      const success = await login(email, password);
 
       if (success) {
         toast({
           title: "Welcome back!",
           description: "You have been successfully signed in.",
-        })
-        router.push("/dashboard")
+        });
+        router.push("/dashboard");
       } else {
         toast({
           title: "Authentication failed",
           description: "Invalid email or password. Please try again.",
           variant: "destructive",
-        })
+        });
       }
     } catch (error) {
-      console.error("Sign in error:", error)
+      console.error("Sign in error:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center text-slate-600 hover:text-slate-900 mb-6">
+          <Link
+            href="/"
+            className="inline-flex items-center text-slate-600 hover:text-slate-900 mb-6"
+          >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to home
           </Link>
@@ -74,7 +83,7 @@ export default function SignInPage() {
               <Shield className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              AdminPro
+              TURBO Telescope
             </span>
           </div>
         </div>
@@ -82,7 +91,9 @@ export default function SignInPage() {
         {/* Sign In Card */}
         <Card className="border-slate-200 shadow-lg">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-slate-900">Team Member Sign In</CardTitle>
+            <CardTitle className="text-2xl font-bold text-slate-900">
+              Team Member Sign In
+            </CardTitle>
             <CardDescription className="text-slate-600">
               Enter your credentials to access the admin dashboard
             </CardDescription>
@@ -127,19 +138,9 @@ export default function SignInPage() {
                 Forgot your password?
               </a>
             </div>
-
-            {/* Demo credentials */}
-            <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
-              <p className="text-sm text-slate-600 font-medium mb-2">Demo Credentials:</p>
-              <div className="text-xs text-slate-500 space-y-1">
-                <p>Admin: admin@adminpro.com / admin123</p>
-                <p>Editor: editor@adminpro.com / editor123</p>
-                <p>Viewer: viewer@adminpro.com / viewer123</p>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>
     </div>
-  )
+  );
 }

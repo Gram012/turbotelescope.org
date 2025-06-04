@@ -1,19 +1,19 @@
-import type React from "react"
-import type { Metadata } from "next"
-import "./globals.css"
-import { Toaster } from "@/components/ui/toaster"
-import { AuthProvider } from "@/components/auth-context"
+import type React from "react";
+import type { Metadata } from "next";
+import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from "@/components/auth-context";
 
 export const metadata: Metadata = {
-  title: "AdminPro Dashboard",
-  description: "A sleek admin dashboard with team member authentication",
-    generator: 'v0.dev'
-}
+  title: "TURBO Dashboard",
+  description: "TURBO Telescope Admin Dashboard",
+  generator: "me",
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="en">
@@ -24,5 +24,5 @@ export default function RootLayout({
         </AuthProvider>
       </body>
     </html>
-  )
+  );
 }

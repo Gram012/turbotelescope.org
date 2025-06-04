@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   Sidebar,
@@ -12,17 +12,38 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from "@/components/ui/sidebar"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { BarChart3, Users, FileText, Settings, Shield, Activity, Calendar, Mail, ChevronUp, LogOut } from "lucide-react"
-import Link from "next/link"
-import { useAuth } from "@/components/auth-context"
-import { useRouter } from "next/navigation"
+} from "@/components/ui/sidebar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  BarChart3,
+  Users,
+  FileText,
+  Settings,
+  Shield,
+  Activity,
+  Calendar,
+  Mail,
+  ChevronUp,
+  LogOut,
+  KeyIcon,
+  HardDrive,
+  Earth,
+  SpaceIcon,
+  Shell,
+} from "lucide-react";
+import Link from "next/link";
+import { useAuth } from "@/components/auth-context";
+import { useRouter } from "next/navigation";
 
 const navigationItems = [
   {
-    title: "Overview",
+    title: "Image Health Website",
     url: "/dashboard",
     icon: BarChart3,
   },
@@ -32,26 +53,29 @@ const navigationItems = [
     icon: Users,
   },
   {
-    title: "Analytics",
+    title: "WAZ",
     url: "/dashboard/analytics",
-    icon: Activity,
+    icon: HardDrive,
   },
   {
-    title: "Reports",
+    title: "BitWarden",
     url: "/dashboard/reports",
-    icon: FileText,
+    icon: KeyIcon,
   },
   {
-    title: "Invitations",
-    url: "/dashboard/invitations",
-    icon: Mail,
+    title: "SkyPortal",
+    url: "/dashboard/reports",
+    icon: Shell,
+
+    // (
+    //   <img
+    //     src="https://skyportal.io/static/skyportal_logo.png"
+    //     alt="SkyPortal"
+    //     className="h-8 w-8"
+    //   />
+    // ),
   },
-  {
-    title: "Calendar",
-    url: "/dashboard/calendar",
-    icon: Calendar,
-  },
-]
+];
 
 const settingsItems = [
   {
@@ -59,16 +83,16 @@ const settingsItems = [
     url: "/dashboard/settings",
     icon: Settings,
   },
-]
+];
 
 export function AppSidebar() {
-  const { user, logout } = useAuth()
-  const router = useRouter()
+  const { user, logout } = useAuth();
+  const router = useRouter();
 
   const handleLogout = () => {
-    logout()
-    router.push("/")
-  }
+    logout();
+    router.push("/");
+  };
 
   return (
     <Sidebar>
@@ -78,7 +102,7 @@ export function AppSidebar() {
             <Shield className="w-5 h-5 text-white" />
           </div>
           <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            AdminPro
+            TURBO Telescope
           </span>
         </div>
       </SidebarHeader>
@@ -140,7 +164,10 @@ export function AppSidebar() {
                   <ChevronUp className="ml-auto w-4 h-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent side="top" className="w-[--radix-popper-anchor-width]">
+              <DropdownMenuContent
+                side="top"
+                className="w-[--radix-popper-anchor-width]"
+              >
                 <DropdownMenuItem>
                   <span>Account Settings</span>
                 </DropdownMenuItem>
@@ -158,5 +185,5 @@ export function AppSidebar() {
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }
