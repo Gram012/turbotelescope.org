@@ -1,0 +1,254 @@
+"use client"
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { AppSidebar } from "@/components/app-sidebar"
+import { InviteMemberModal } from "@/components/invite-member-modal"
+import { AuthGuard } from "@/components/auth-guard"
+import { Users, DollarSign, TrendingUp, Bell, Search, Activity, MoreHorizontal } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Separator } from "@/components/ui/separator"
+import { useAuth } from "@/components/auth-context"
+
+export default function DashboardPage() {
+  const { user } = useAuth()
+
+  const stats = [
+    {
+      title: "Total Users",
+      value: "2,847",
+      change: "+12.5%",
+      icon: Users,
+      color: "text-blue-600",
+    },
+    {
+      title: "Revenue",
+      value: "$45,231",
+      change: "+8.2%",
+      icon: DollarSign,
+      color: "text-green-600",
+    },
+    {
+      title: "Active Sessions",
+      value: "1,234",
+      change: "+3.1%",
+      icon: Activity,
+      color: "text-purple-600",
+    },
+    {
+      title: "Conversion Rate",
+      value: "3.24%",
+      change: "+0.4%",
+      icon: TrendingUp,
+      color: "text-orange-600",
+    },
+  ]
+
+  const recentUsers = [
+    { name: "Alice Johnson", email: "alice@example.com", role: "Admin", status: "Active" },
+    { name: "Bob Smith", email: "bob@example.com", role: "Editor", status: "Active" },
+    { name: "Carol Davis", email: "carol@example.com", role: "Viewer", status: "Inactive" },
+    { name: "David Wilson", email: "david@example.com", role: "Editor", status: "Active" },
+  ]
+
+  const pendingInvitations = [
+    { email: "john@example.com", role: "Editor", sentDate: "2 days ago" },
+    { email: "sarah@example.com", role: "Viewer", sentDate: "1 week ago" },
+  ]
+
+  return (
+    <AuthGuard>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          {/* Header */}
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <div className="flex items-center justify-between w-full">
+              <h1 className="text-lg font-semibold">Dashboard Overview</h1>
+              <div className="flex items-center space-x-4">
+                <div className="relative hidden md:block">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <Input placeholder="Search..." className="pl-10 w-64 border-slate-300" />
+                </div>
+                <Button variant="ghost" size="sm">
+                  <Bell className="w-4 h-4" />
+                </Button>
+                <InviteMemberModal />
+              </div>
+            </div>
+          </header>
+
+          {/* Main Content */}
+          <main className="flex-1 space-y-4 p-4 md:p-6">
+            {/* Welcome Section */}
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold text-slate-900 mb-2">Welcome back, {user?.name || "Admin"}</h2>
+              <p className="text-slate-600">
+                Here's what's happening with your platform today.
+                {user?.role && (
+                  <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {user.role}
+                  </span>
+                )}
+              </p>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {stats.map((stat, index) => (
+                <Card key={index} className="border-slate-200">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-slate-600 mb-1">{stat.title}</p>
+                        <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
+                        <p className="text-sm text-green-600 font-medium">{stat.change} from last month</p>
+                      </div>
+                      <div className={`p-3 rounded-lg bg-slate-100 ${stat.color}`}>
+                        <stat.icon className="w-6 h-6" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Content Grid */}
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Recent Activity */}
+              <div className="lg:col-span-2 space-y-6">
+                <Card className="border-slate-200">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Recent Activity</CardTitle>
+                        <CardDescription>Latest actions and updates from your team</CardDescription>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        View All
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {[
+                        { action: "New user registered", user: "Alice Johnson", time: "2 minutes ago" },
+                        { action: "Report generated", user: "System", time: "15 minutes ago" },
+                        { action: "Settings updated", user: "Bob Smith", time: "1 hour ago" },
+                        { action: "Data backup completed", user: "System", time: "2 hours ago" },
+                      ].map((activity, index) => (
+                        <div key={index} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-slate-50">
+                          <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-slate-900">{activity.action}</p>
+                            <p className="text-xs text-slate-500">
+                              by {activity.user} • {activity.time}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Pending Invitations */}
+                <Card className="border-slate-200">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Pending Invitations</CardTitle>
+                        <CardDescription>Team member invitations awaiting response</CardDescription>
+                      </div>
+                      <InviteMemberModal
+                        trigger={
+                          <Button variant="outline" size="sm">
+                            Send Invite
+                          </Button>
+                        }
+                      />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {pendingInvitations.map((invite, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 rounded-lg border border-slate-200"
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-slate-900">{invite.email}</p>
+                            <p className="text-xs text-slate-500">
+                              {invite.role} • Sent {invite.sentDate}
+                            </p>
+                          </div>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Right Sidebar */}
+              <div className="space-y-6">
+                {/* Team Members */}
+                <Card className="border-slate-200">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Team Members</CardTitle>
+                        <CardDescription>Active team members</CardDescription>
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {recentUsers.map((user, index) => (
+                        <div key={index} className="flex items-center space-x-3">
+                          <Avatar className="w-8 h-8">
+                            <AvatarFallback>
+                              {user.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-900 truncate">{user.name}</p>
+                            <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                          </div>
+                          <Badge variant={user.status === "Active" ? "default" : "secondary"} className="text-xs">
+                            {user.status}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4">
+                      <InviteMemberModal
+                        trigger={
+                          <Button variant="outline" className="w-full">
+                            Invite New Member
+                          </Button>
+                        }
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </AuthGuard>
+  )
+}
