@@ -32,6 +32,7 @@ import {
   XIcon,
   Telescope,
   BarChart,
+  ExternalLink,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -126,8 +127,16 @@ export default function DashboardPage() {
   ];
 
   const pendingInvitations = [
-    { email: "john@example.com", role: "Editor", sentDate: "2 days ago" },
-    { email: "sarah@example.com", role: "Viewer", sentDate: "1 week ago" },
+    {
+      issue: "Creating many cutouts for neural net training",
+      assigner: "mssgill",
+      date: "5/21",
+    },
+    {
+      issue: "Make seeing and depth accessible through IHW site",
+      assigner: "patkel",
+      date: "1/22",
+    },
   ];
 
   return (
@@ -212,7 +221,7 @@ export default function DashboardPage() {
                       <div>
                         <CardTitle>Recent Pipeline Runs</CardTitle>
                         <CardDescription>
-                          Latest actions and updates from your team
+                          Latest pipeline runs with database entries
                         </CardDescription>
                       </div>
                       <Button variant="outline" size="sm">
@@ -224,24 +233,24 @@ export default function DashboardPage() {
                     <div className="space-y-4">
                       {[
                         {
-                          action: "New user registered",
-                          user: "Alice Johnson",
-                          time: "2 minutes ago",
+                          action: "xxx",
+                          user: "LW runtime",
+                          time: "6/4 - 21:45",
                         },
                         {
-                          action: "Report generated",
-                          user: "System",
-                          time: "15 minutes ago",
+                          action: "xxx",
+                          user: "TurboDocker",
+                          time: "6/4 - 12:32",
                         },
                         {
-                          action: "Settings updated",
-                          user: "Bob Smith",
-                          time: "1 hour ago",
+                          action: "xxx",
+                          user: "LW runtime",
+                          time: "6/2 - 15:17",
                         },
                         {
-                          action: "Data backup completed",
-                          user: "System",
-                          time: "2 hours ago",
+                          action: "xxx",
+                          user: "TurboDocker",
+                          time: "5/30 - 9:51",
                         },
                       ].map((activity, index) => (
                         <div
@@ -254,7 +263,7 @@ export default function DashboardPage() {
                               {activity.action}
                             </p>
                             <p className="text-xs text-slate-500">
-                              by {activity.user} • {activity.time}
+                              {activity.user} • {activity.time}
                             </p>
                           </div>
                         </div>
@@ -268,15 +277,15 @@ export default function DashboardPage() {
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle>Pending Invitations</CardTitle>
+                        <CardTitle>Your GitHub Issues</CardTitle>
                         <CardDescription>
-                          Team member invitations awaiting response
+                          IDK if I can actually make this work...
                         </CardDescription>
                       </div>
                       <InviteMemberModal
                         trigger={
                           <Button variant="outline" size="sm">
-                            Send Invite
+                            <ExternalLink />
                           </Button>
                         }
                       />
@@ -291,10 +300,10 @@ export default function DashboardPage() {
                         >
                           <div>
                             <p className="text-sm font-medium text-slate-900">
-                              {invite.email}
+                              {invite.issue}
                             </p>
                             <p className="text-xs text-slate-500">
-                              {invite.role} • Sent {invite.sentDate}
+                              Opened by {invite.assigner} on {invite.date}
                             </p>
                           </div>
                           <Button variant="ghost" size="sm">

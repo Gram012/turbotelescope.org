@@ -15,9 +15,9 @@ export interface AuthState {
 
 // Demo users for authentication
 const DEMO_USERS = [
-  { id: "1", email: "admin@adminpro.com", password: "admin123", name: "Admin User", role: "admin" },
-  { id: "2", email: "editor@adminpro.com", password: "editor123", name: "Editor User", role: "editor" },
-  { id: "3", email: "viewer@adminpro.com", password: "viewer123", name: "Viewer User", role: "viewer" },
+  { id: "1", email: "admin@turbotelescope.org", password: "admin123", name: "Admin", role: "admin" },
+  { id: "2", email: "ethan@turbotelescope.org", password: "admin123", name: "Ethan", role: "admin" },
+  { id: "3", email: "ethan@turbotelescope.org", password: "admin123", name: "Mandeep", role: "admin" },
 ]
 
 export class AuthService {
