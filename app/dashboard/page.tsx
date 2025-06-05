@@ -50,7 +50,7 @@ export default function DashboardPage() {
       color: "text-green-600",
     },
     {
-      title: "Faluire Rate",
+      title: "Failure Rate",
       value: "5%",
       change: "-12.5% from last week",
       icon: XIcon,
