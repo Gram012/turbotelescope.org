@@ -1,20 +1,21 @@
+// app/page.tsx
+"use client";
+
+import { useUser } from "@auth0/nextjs-auth0";
 import { Button } from "@/components/ui/button";
+import SiteLogo from "@/components/ui/siteLogo";
 import { ArrowRight, Shield, Users, BarChart3, Zap } from "lucide-react";
 import Link from "next/link";
 
 export default function HomePage() {
+  const { user, isLoading } = useUser();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-              <img src="/turboIconB.png" className="text-color-blue-600" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              TURBO Telescope
-            </span>
-          </div>
+          <SiteLogo />
           <nav className="hidden md:flex items-center space-x-8">
             <a
               href="#features"
@@ -35,14 +36,26 @@ export default function HomePage() {
               Dolor
             </a>
           </nav>
-          <Link href="/signin">
-            <Button
-              variant="outline"
-              className="border-slate-300 hover:bg-slate-50"
-            >
-              Sign In
-            </Button>
-          </Link>
+
+          {isLoading ? null : user ? (
+            <Link href="/dashboard">
+              <Button
+                variant="outline"
+                className="border-slate-300 hover:bg-slate-50"
+              >
+                Go to Dashboard
+              </Button>
+            </Link>
+          ) : (
+            <a href="/api/auth/login">
+              <Button
+                variant="outline"
+                className="border-slate-300 hover:bg-slate-50"
+              >
+                Sign In with GitHub
+              </Button>
+            </a>
+          )}
         </div>
       </header>
 
@@ -59,19 +72,31 @@ export default function HomePage() {
           </h1>
           <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto leading-relaxed">
             A public home page with some background information. A portal sign
-            in for team members to access all turbo web applications, all in
-            once place.
+            in for team members to access all TURBO web applications, all in one
+            place.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/signin">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8"
-              >
-                Access Dashboard
-                <ArrowRight className="ml-2 w-4 h-4" />
-              </Button>
-            </Link>
+            {isLoading ? null : user ? (
+              <Link href="/dashboard">
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8"
+                >
+                  Go to Dashboard
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </Link>
+            ) : (
+              <a href="/api/auth/login">
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8"
+                >
+                  Access Dashboard
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </a>
+            )}
           </div>
         </div>
       </section>
@@ -85,9 +110,7 @@ export default function HomePage() {
             </h2>
             <p className="text-lg text-slate-600 max-w-2xl mx-auto">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-              eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-              enim ad minim veniam, quis nostrud exercitation ullamco laboris
-              nisi ut aliquip ex ea commodo consequat.
+              eiusmod tempor incididunt ut labore et dolore magna aliqua.
             </p>
           </div>
 
@@ -165,69 +188,10 @@ export default function HomePage() {
                 cillum dolore eu fugiat nulla pariatur.
               </p>
             </div>
-            <div>
-              <h4 className="font-semibold text-white mb-4">Product</h4>
-              <ul className="space-y-2">
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Lorem
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Ipsum
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Dolor
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-white mb-4">Company</h4>
-              <ul className="space-y-2">
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    About
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Blog
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Careers
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-white mb-4">Support</h4>
-              <ul className="space-y-2">
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Help Center
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Contact
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Status
-                  </a>
-                </li>
-              </ul>
-            </div>
+            {/* …other footer columns… */}
           </div>
           <div className="border-t border-slate-800 mt-8 pt-8 text-center">
-            <p className="text-slate-400">...</p>
+            <p className="text-slate-400">© 2025 TURBO Telescope Project</p>
           </div>
         </div>
       </footer>
