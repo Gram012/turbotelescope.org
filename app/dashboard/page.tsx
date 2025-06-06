@@ -40,7 +40,7 @@ export default function DashboardPage() {
 
   const stats = [
     {
-      title: "Succese Rate",
+      title: "Succes Rate",
       value: "95%",
       change: "+12.5% from last week",
       icon: Check,
@@ -167,7 +167,7 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            {/* Stats Grid */}
+            {/* IHW Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {stats.map((stat, index) => (
                 <Card key={index} className="border-slate-200">
