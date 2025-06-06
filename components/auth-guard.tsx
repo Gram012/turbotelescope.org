@@ -1,35 +1,26 @@
-"use client"
+// /components/auth-guard.tsx
+"use client";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-import { useAuth } from "@/components/auth-context"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
-import type React from "react"
-
-interface AuthGuardProps {
-  children: React.ReactNode
-}
-
-export function AuthGuard({ children }: AuthGuardProps) {
-  const { isAuthenticated, isLoading } = useAuth()
-  const router = useRouter()
+export function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push("/signin")
+    if (status === "unauthenticated") {
+      router.push("/signin");
     }
-  }, [isAuthenticated, isLoading, router])
+  }, [status, router]);
 
-  if (isLoading) {
+  if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
-    )
+    );
   }
 
-  if (!isAuthenticated) {
-    return null
-  }
-
-  return <>{children}</>
+  return <>{children}</>;
 }

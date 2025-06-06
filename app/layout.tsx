@@ -2,7 +2,7 @@ import type React from "react";
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/components/auth-context";
+import { SessionAuthProvider } from "@/components/session-provider"; // <-- this is the wrapper we defined
 
 export const metadata: Metadata = {
   title: "TURBO Dashboard",
@@ -18,10 +18,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
+        <SessionAuthProvider>
           {children}
           <Toaster />
-        </AuthProvider>
+        </SessionAuthProvider>
       </body>
     </html>
   );

@@ -23,23 +23,15 @@ import {
 import {
   BarChart3,
   Users,
-  FileText,
   Settings,
-  Shield,
-  Activity,
-  Calendar,
-  Mail,
+  KeyIcon,
+  Shell,
+  HardDrive,
   ChevronUp,
   LogOut,
-  KeyIcon,
-  HardDrive,
-  Earth,
-  SpaceIcon,
-  Shell,
 } from "lucide-react";
 import Link from "next/link";
-import { useAuth } from "@/components/auth-context";
-import { useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 
 const navigationItems = [
   {
@@ -66,14 +58,6 @@ const navigationItems = [
     title: "SkyPortal",
     url: "/dashboard/reports",
     icon: Shell,
-
-    // (
-    //   <img
-    //     src="https://skyportal.io/static/skyportal_logo.png"
-    //     alt="SkyPortal"
-    //     className="h-8 w-8"
-    //   />
-    // ),
   },
 ];
 
@@ -86,20 +70,15 @@ const settingsItems = [
 ];
 
 export function AppSidebar() {
-  const { user, logout } = useAuth();
-  const router = useRouter();
-
-  const handleLogout = () => {
-    logout();
-    router.push("/");
-  };
+  const { data: session } = useSession();
+  const user = session?.user;
 
   return (
     <Sidebar>
       <SidebarHeader>
         <div className="flex items-center space-x-2 px-2 py-2">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-            <img src="/turboIconB.png" className="text-color-blue-600" />
+            <img src="/turboIconB.png" alt="TURBO Logo" />
           </div>
           <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             <Link href="/">TURBO Telescope</Link>
@@ -152,7 +131,7 @@ export function AppSidebar() {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
                   <Avatar className="w-6 h-6">
-                    <AvatarImage src="/placeholder-user.jpg" />
+                    <AvatarImage src={user?.image ?? "/placeholder-user.jpg"} />
                     <AvatarFallback>
                       {user?.name
                         ?.split(" ")
@@ -164,17 +143,14 @@ export function AppSidebar() {
                   <ChevronUp className="ml-auto w-4 h-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side="top"
-                className="w-[--radix-popper-anchor-width]"
-              >
+              <DropdownMenuContent side="top">
                 <DropdownMenuItem>
                   <span>Account Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <span>Billing</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout}>
+                <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })}>
                   <LogOut className="w-4 h-4 mr-2" />
                   <span>Sign out</span>
                 </DropdownMenuItem>
@@ -183,6 +159,7 @@ export function AppSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+
       <SidebarRail />
     </Sidebar>
   );

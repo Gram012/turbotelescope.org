@@ -1,5 +1,7 @@
 "use client";
 
+import { useSession } from "next-auth/react";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,7 +11,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
@@ -18,29 +21,22 @@ import {
 import { AppSidebar } from "@/components/app-sidebar";
 import { InviteMemberModal } from "@/components/invite-member-modal";
 import { AuthGuard } from "@/components/auth-guard";
-import {
-  Users,
-  DollarSign,
-  TrendingUp,
-  Bell,
-  Search,
-  Activity,
-  MoreHorizontal,
-  Plus,
-  X,
-  Check,
-  XIcon,
-  Telescope,
-  BarChart,
-  ExternalLink,
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { useAuth } from "@/components/auth-context";
 import { GitHubIssues } from "@/components/github-issues";
 
+import {
+  Bell,
+  Search,
+  Check,
+  XIcon,
+  BarChart,
+  Telescope,
+  MoreHorizontal,
+} from "lucide-react";
+import { InviteUserModal } from "@/components/invite-user-modal";
+
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  const user = session?.user;
 
   const stats = [
     {
@@ -127,19 +123,6 @@ export default function DashboardPage() {
     },
   ];
 
-  const pendingInvitations = [
-    {
-      issue: "Creating many cutouts for neural net training",
-      assigner: "mssgill",
-      date: "5/21",
-    },
-    {
-      issue: "Make seeing and depth accessible through IHW site",
-      assigner: "patkel",
-      date: "1/22",
-    },
-  ];
-
   return (
     <AuthGuard>
       <SidebarProvider>
@@ -162,7 +145,7 @@ export default function DashboardPage() {
                 <Button variant="ghost" size="sm">
                   <Bell className="w-4 h-4" />
                 </Button>
-                <InviteMemberModal />
+                <InviteUserModal />
               </div>
             </div>
           </header>
@@ -176,9 +159,9 @@ export default function DashboardPage() {
               </h2>
               <p className="text-slate-600">
                 Here's what's happening.
-                {user?.role && (
+                {user?.email && (
                   <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    {user.role}
+                    {user.email}
                   </span>
                 )}
               </p>
@@ -273,13 +256,12 @@ export default function DashboardPage() {
                   </CardContent>
                 </Card>
 
-                {/* Pending Invitations */}
                 <Card className="border-slate-200">
                   <GitHubIssues owner="patkel" repo="turbo_telescope" />
                 </Card>
               </div>
 
-              {/* Waz Alerts */}
+              {/* WAZ Alerts */}
               <div className="space-y-6">
                 {/* Team Members */}
                 <Card className="border-slate-200">
