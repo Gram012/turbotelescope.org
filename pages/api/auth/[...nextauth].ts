@@ -1,9 +1,7 @@
 import NextAuth from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
 
-function getAllowedUsers(): string[] {
-    return process.env.ALLOWED_USERS?.split(",").map((u) => u.trim()) ?? [];
-}
+const allowedUsers = ["Gram012"]; // Hardcoded allowlist
 
 export default NextAuth({
     providers: [
@@ -15,32 +13,31 @@ export default NextAuth({
     callbacks: {
         async signIn({ profile }) {
             const githubProfile = profile as { login?: string };
+
+            console.log("[NextAuth] GitHub profile:", githubProfile);
+
             if (!githubProfile?.login) {
-                console.warn("[NextAuth] signIn denied: missing GitHub login in profile.");
+                console.warn("[NextAuth] No login field found.");
                 return false;
             }
 
-            const login = githubProfile.login.toLowerCase();
-            const allowedUsers = getAllowedUsers().map((u) => u.toLowerCase());
+            const isAllowed = allowedUsers.includes(githubProfile.login);
+            console.log(`[NextAuth] Is ${githubProfile.login} allowed?`, isAllowed);
 
-            const allowed = allowedUsers.includes(login);
-            console.log(`[NextAuth] signIn attempt by "${login}" — ${allowed ? "ALLOWED" : "DENIED"}`);
-
-            return allowed;
+            return isAllowed;
         },
 
         async jwt({ token, account, profile }) {
             if (account && profile) {
                 token.accessToken = account.access_token;
                 token.login = (profile as any).login;
-                console.log(`[NextAuth] jwt: login="${token.login}" assigned access token.`);
             }
 
-            const allowedUsers = getAllowedUsers().map((u) => u.toLowerCase());
-            const login = typeof token.login === "string" ? token.login.toLowerCase() : "";
-
-            token.role = allowedUsers.includes(login) ? "admin" : "user";
-            console.log(`[NextAuth] jwt: login="${login}" assigned role="${token.role}"`);
+            if (typeof token.login === "string") {
+                token.role = allowedUsers.includes(token.login) ? "admin" : "user";
+            } else {
+                token.role = "user";
+            }
 
             return token;
         },
@@ -49,11 +46,6 @@ export default NextAuth({
             session.accessToken = token.accessToken as string;
             session.user.login = token.login as string;
             session.user.role = token.role as "admin" | "user";
-
-            console.log(
-                `[NextAuth] session: ${session.user.login} (${session.user.role}) session initialized.`
-            );
-
             return session;
         },
     },
