@@ -37,6 +37,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/components/auth-context";
+import { GitHubIssues } from "@/components/github-issues";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -274,45 +275,7 @@ export default function DashboardPage() {
 
                 {/* Pending Invitations */}
                 <Card className="border-slate-200">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle>Your GitHub Issues</CardTitle>
-                        <CardDescription>
-                          IDK if I can actually make this work...
-                        </CardDescription>
-                      </div>
-                      <InviteMemberModal
-                        trigger={
-                          <Button variant="outline" size="sm">
-                            <ExternalLink />
-                          </Button>
-                        }
-                      />
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {pendingInvitations.map((invite, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-3 rounded-lg border border-slate-200"
-                        >
-                          <div>
-                            <p className="text-sm font-medium text-slate-900">
-                              {invite.issue}
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              Opened by {invite.assigner} on {invite.date}
-                            </p>
-                          </div>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
+                  <GitHubIssues owner="patkel" repo="turbo_telescope" />
                 </Card>
               </div>
 
