@@ -1,3 +1,5 @@
+// app/dashboard/page.tsx
+
 import { auth0 } from "@/lib/auth0";
 import { redirect } from "next/navigation";
 
@@ -31,10 +33,12 @@ import { InviteMemberModal } from "@/components/invite-member-modal";
 import { GitHubIssues } from "@/components/githubIssues";
 
 export default async function DashboardPage() {
-  // ✅ `await` is now inside this async function, not at top‐level
+  // ── Get session via Auth0Client (v6.x)
   const session = await auth0.getSession();
+
   if (!session) {
-    redirect("/api/auth/login");
+    // ── Redirect unauthenticated users to /auth/login (not /api/auth/login)
+    redirect("/auth/login");
   }
 
   const user = session.user;

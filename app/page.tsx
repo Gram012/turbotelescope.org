@@ -38,16 +38,26 @@ export default function HomePage() {
           </nav>
 
           {isLoading ? null : user ? (
-            <Link href="/dashboard">
-              <Button
-                variant="outline"
-                className="border-slate-300 hover:bg-slate-50"
-              >
-                Go to Dashboard
-              </Button>
-            </Link>
+            <div className="flex items-center space-x-4">
+              <Link href="/dashboard">
+                <Button
+                  variant="outline"
+                  className="border-slate-300 hover:bg-slate-50"
+                >
+                  Go to Dashboard
+                </Button>
+              </Link>
+              <a href="/auth/logout">
+                <Button
+                  variant="ghost"
+                  className="text-slate-600 hover:text-slate-900"
+                >
+                  Sign Out
+                </Button>
+              </a>
+            </div>
           ) : (
-            <a href="/api/auth/login">
+            <a href="/auth/login">
               <Button
                 variant="outline"
                 className="border-slate-300 hover:bg-slate-50"
@@ -87,7 +97,7 @@ export default function HomePage() {
                 </Button>
               </Link>
             ) : (
-              <a href="/api/auth/login">
+              <a href="/auth/login">
                 <Button
                   size="lg"
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8"
