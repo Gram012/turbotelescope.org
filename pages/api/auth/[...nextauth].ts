@@ -1,18 +1,9 @@
 import NextAuth from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
-import fs from "fs/promises";
-import path from "path";
 
-// Dynamic user allowlist
-async function loadAllowedUsers(): Promise<string[]> {
-    try {
-        const filePath = path.resolve("config/allowed-users.json");
-        const data = await fs.readFile(filePath, "utf8");
-        return JSON.parse(data) as string[];
-    } catch (err) {
-        console.error("Failed to read allowed users list:", err);
-        return [];
-    }
+// Parse comma-separated list of GitHub usernames
+function getAllowedUsers(): string[] {
+    return process.env.ALLOWED_USERS?.split(",").map((u) => u.trim()) ?? [];
 }
 
 export default NextAuth({
@@ -27,25 +18,22 @@ export default NextAuth({
             const githubProfile = profile as { login?: string };
             if (!githubProfile?.login) return false;
 
-            const allowedUsers = await loadAllowedUsers();
+            const allowedUsers = getAllowedUsers();
             return allowedUsers.includes(githubProfile.login);
         },
 
         async jwt({ token, account, profile }) {
-            // Add access token and GitHub login info
             if (account && profile) {
                 token.accessToken = account.access_token;
                 token.login = (profile as any).login;
             }
 
-            // Load role
-            const allowedUsers = await loadAllowedUsers();
+            const allowedUsers = getAllowedUsers();
             if (typeof token.login === "string") {
                 token.role = allowedUsers.includes(token.login) ? "admin" : "user";
             } else {
                 token.role = "user";
             }
-
 
             return token;
         },
