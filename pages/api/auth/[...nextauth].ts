@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
 
-const allowedUsers = ["Gram012"]; // Hardcoded allowlist
+const allowedUsers = ["Gram012", "mssgill", "patkel"]; // Hardcoded allowlist
 
 export default NextAuth({
     providers: [
