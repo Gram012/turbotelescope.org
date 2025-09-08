@@ -27,7 +27,7 @@ type GitHubIssuesProps = {
   limit?: number;
 };
 
-export function GitHubIssues({ owner, repo, limit = 5 }: GitHubIssuesProps) {
+export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
   const [issues, setIssues] = useState<GitHubIssue[]>([]);
   const [error, setError] = useState<string | null>(null);
 
