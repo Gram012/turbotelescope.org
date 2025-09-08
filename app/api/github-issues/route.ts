@@ -1,81 +1,49 @@
+// app/api/github-issues/route.ts
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-export async function GET() {
-
+export async function GET(req: Request) {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.login) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Hardcoded repo info
     const owner = "patkel";
     const repo = "turbo_telescope";
+    const me = (session.user as any).login as string;
 
-    // Prefer PAT for consistency
-    const token = process.env.GITHUB_TOKEN || (session as any).accessToken;
+    const { searchParams } = new URL(req.url);
+    const filter = (searchParams.get("filter") || "creator") as "creator" | "assignee";
+    const state = searchParams.get("state") || "open"; // optional: "all" | "closed"
 
+    const token = (process.env.GITHUB_TOKEN ?? (session as any).accessToken ?? "").trim();
     if (!token) {
         return NextResponse.json({ error: "No GitHub token available" }, { status: 500 });
     }
 
-    const ghRes = await fetch(
-        `https://api.github.com/repos/${owner}/${repo}/issues?state=open&per_page=100`,
-        {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "User-Agent": "next-app",
-                Accept: "application/vnd.github+json",
-            },
-            cache: "no-store",
-        }
-    );
+    const url = new URL(`https://api.github.com/repos/${owner}/${repo}/issues`);
+    url.searchParams.set("state", state);
+    url.searchParams.set("per_page", "100");
+    url.searchParams.set(filter, me); // "creator" (default) or "assignee"
 
-    if (!ghRes.ok) {
-        const details = await ghRes.text();
-        return NextResponse.json(
-            { error: "GitHub error", status: ghRes.status, details },
-            { status: ghRes.status }
-        );
-    }
-    // --- DIAGNOSTIC START ---
-    const whoAmI = await fetch("https://api.github.com/user", {
-        headers: {
-            Authorization: `token ${token}`, // ← try 'token' form
-            Accept: "application/vnd.github+json",
-            "User-Agent": "next-app",
-        },
-    });
-    const whoText = await whoAmI.text();
-
-    const repoMeta = await fetch(`https://api.github.com/repos/patkel/turbo_telescope`, {
+    const ghRes = await fetch(url.toString(), {
         headers: {
             Authorization: `token ${token}`,
             Accept: "application/vnd.github+json",
             "User-Agent": "next-app",
         },
+        cache: "no-store",
     });
-    const metaText = await repoMeta.text();
 
-    if (!repoMeta.ok) {
-        return NextResponse.json(
-            {
-                error: "Repo not visible to token",
-                status: repoMeta.status,
-                // Which user is the token for?
-                tokenUserStatus: whoAmI.status,
-                tokenUser: whoText, // look for "login": "...", "two_factor_authentication": ...
-                // Scope headers help a lot:
-                oauthScopesUser: whoAmI.headers.get("x-oauth-scopes"),
-                oauthScopesRepo: repoMeta.headers.get("x-oauth-scopes"),
-                acceptedScopesRepo: repoMeta.headers.get("x-accepted-oauth-scopes"),
-                repoMeta: metaText,
-            },
-            { status: 404 }
-        );
+    if (!ghRes.ok) {
+        const details = await ghRes.text();
+        return NextResponse.json({ error: "GitHub error", details }, { status: ghRes.status });
     }
-    // --- DIAGNOSTIC END ---
-    const issues = await ghRes.json();
-    return NextResponse.json(issues);
+
+    // Strip PRs (GitHub returns PRs in the issues list)
+    const raw = (await ghRes.json()) as any[];
+    const issuesOnly = raw.filter((i) => !i.pull_request);
+
+    return NextResponse.json(issuesOnly);
 }
