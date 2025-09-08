@@ -29,8 +29,8 @@ export async function GET(req: Request) {
     // }
 
     const { searchParams } = new URL(req.url);
-    const owner = searchParams.get("owner");
-    const repo = searchParams.get("repo");
+    const owner = "patkel";
+    const repo = "turbo_telescope";
     if (!owner || !repo) {
         return NextResponse.json({ error: "Missing owner/repo" }, { status: 400 });
     }
