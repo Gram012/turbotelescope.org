@@ -14,8 +14,8 @@ export async function GET(req: Request) {
     const me = (session.user as any).login as string;
 
     const { searchParams } = new URL(req.url);
-    const filter = (searchParams.get("filter") || "creator") as "creator" | "assignee";
-    const state = searchParams.get("state") || "open"; // optional: "all" | "closed"
+    const filter = (searchParams.get("filter") || "assignee") as "creator" | "assignee";
+    const state = searchParams.get("state") || "open";
 
     const token = (process.env.GITHUB_TOKEN ?? (session as any).accessToken ?? "").trim();
     if (!token) {
