@@ -51,7 +51,7 @@ const navigationItems = [
   },
   {
     title: "BitWarden",
-    url: "/dashboard/reports",
+    url: "https://vault.bitwarden.com/#/vault",
     icon: KeyIcon,
   },
   {
