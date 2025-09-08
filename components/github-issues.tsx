@@ -34,10 +34,9 @@ export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
   useEffect(() => {
     async function fetchIssues() {
       try {
-        const res = await fetch(
-          `/api/github-issues?owner=${owner}&repo=${repo}`,
-          { credentials: "include" }
-        );
+        const res = await fetch("/api/github-issues", {
+          credentials: "include",
+        });
 
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));

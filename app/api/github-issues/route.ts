@@ -1,40 +1,18 @@
-// app/api/github-issues/route.ts
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth"; // see earlier step where we export options
-import { cookies } from "next/headers";
+import { authOptions } from "@/lib/auth";
 
-export const dynamic = "force-dynamic"; // avoid any caching weirdness in dev/preview
-
-export async function GET(req: Request) {
-
-    const cookieHeader = cookies().toString();
+export async function GET() {
     const session = await getServerSession(authOptions);
-
     if (!session?.user) {
-        return NextResponse.json(
-            {
-                error: "Unauthorized",
-                hint: "No session in route handler",
-                hasCookieHeader: Boolean(cookieHeader),
-                cookieHeaderSample: cookieHeader?.slice(0, 120) || null,
-            },
-            { status: 401 }
-        );
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // const session = await getServerSession(authOptions);
-    // if (!session?.user) {
-    //     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
-
-    const { searchParams } = new URL(req.url);
+    // Hardcoded repo info
     const owner = "patkel";
     const repo = "turbo_telescope";
-    if (!owner || !repo) {
-        return NextResponse.json({ error: "Missing owner/repo" }, { status: 400 });
-    }
 
+    // Prefer PAT for consistency
     const token = process.env.GITHUB_TOKEN || (session as any).accessToken;
     if (!token) {
         return NextResponse.json({ error: "No GitHub token available" }, { status: 500 });
@@ -53,8 +31,11 @@ export async function GET(req: Request) {
     );
 
     if (!ghRes.ok) {
-        const text = await ghRes.text();
-        return NextResponse.json({ error: "GitHub error", details: text }, { status: ghRes.status });
+        const details = await ghRes.text();
+        return NextResponse.json(
+            { error: "GitHub error", status: ghRes.status, details },
+            { status: ghRes.status }
+        );
     }
 
     const issues = await ghRes.json();
