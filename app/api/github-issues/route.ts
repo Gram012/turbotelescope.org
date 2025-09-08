@@ -14,6 +14,7 @@ export async function GET() {
 
     // Prefer PAT for consistency
     const token = process.env.GITHUB_TOKEN || (session as any).accessToken;
+
     if (!token) {
         return NextResponse.json({ error: "No GitHub token available" }, { status: 500 });
     }
