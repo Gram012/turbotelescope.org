@@ -35,7 +35,8 @@ export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
     async function fetchIssues() {
       try {
         const res = await fetch(
-          `/api/github-issues?owner=${owner}&repo=${repo}`
+          `/api/github-issues?owner=${owner}&repo=${repo}`,
+          { credentials: "include" }
         );
 
         if (!res.ok) throw new Error("Failed to fetch issues");
