@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal } from "lucide-react";
+import { Check } from "lucide-react";
 
 type GitHubIssue = {
   id: number;
@@ -104,7 +104,7 @@ export function GitHubIssues({ owner, repo, limit = 5 }: GitHubIssuesProps) {
                   </p>
                 </div>
                 <Button variant="ghost" size="sm">
-                  <MoreHorizontal className="w-4 h-4" />
+                  <Check className="w-4 h-4" />
                 </Button>
               </div>
             ))}

@@ -1,4 +1,4 @@
-// app/api/github-issues/route.ts
+
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -25,7 +25,7 @@ export async function GET(req: Request) {
     const url = new URL(`https://api.github.com/repos/${owner}/${repo}/issues`);
     url.searchParams.set("state", state);
     url.searchParams.set("per_page", "100");
-    url.searchParams.set(filter, me); // "creator" (default) or "assignee"
+    url.searchParams.set(filter, me);
 
     const ghRes = await fetch(url.toString(), {
         headers: {
@@ -41,7 +41,7 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: "GitHub error", details }, { status: ghRes.status });
     }
 
-    // Strip PRs (GitHub returns PRs in the issues list)
+    //Strip PRs (GitHub returns PRs in the issues list)
     const raw = (await ghRes.json()) as any[];
     const issuesOnly = raw.filter((i) => !i.pull_request);
 
