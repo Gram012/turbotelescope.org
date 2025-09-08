@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
 export async function GET() {
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -38,7 +39,43 @@ export async function GET() {
             { status: ghRes.status }
         );
     }
+    // --- DIAGNOSTIC START ---
+    const whoAmI = await fetch("https://api.github.com/user", {
+        headers: {
+            Authorization: `token ${token}`, // ← try 'token' form
+            Accept: "application/vnd.github+json",
+            "User-Agent": "next-app",
+        },
+    });
+    const whoText = await whoAmI.text();
 
+    const repoMeta = await fetch(`https://api.github.com/repos/patkel/turbo_telescope`, {
+        headers: {
+            Authorization: `token ${token}`,
+            Accept: "application/vnd.github+json",
+            "User-Agent": "next-app",
+        },
+    });
+    const metaText = await repoMeta.text();
+
+    if (!repoMeta.ok) {
+        return NextResponse.json(
+            {
+                error: "Repo not visible to token",
+                status: repoMeta.status,
+                // Which user is the token for?
+                tokenUserStatus: whoAmI.status,
+                tokenUser: whoText, // look for "login": "...", "two_factor_authentication": ...
+                // Scope headers help a lot:
+                oauthScopesUser: whoAmI.headers.get("x-oauth-scopes"),
+                oauthScopesRepo: repoMeta.headers.get("x-oauth-scopes"),
+                acceptedScopesRepo: repoMeta.headers.get("x-accepted-oauth-scopes"),
+                repoMeta: metaText,
+            },
+            { status: 404 }
+        );
+    }
+    // --- DIAGNOSTIC END ---
     const issues = await ghRes.json();
     return NextResponse.json(issues);
 }
