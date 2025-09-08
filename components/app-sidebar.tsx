@@ -94,7 +94,7 @@ export function AppSidebar() {
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <Link href={item.url}>
+                    <Link href={item.url} target="blank">
                       <item.icon className="w-4 h-4" />
                       <span>{item.title}</span>
                     </Link>
