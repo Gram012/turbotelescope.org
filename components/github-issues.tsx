@@ -39,7 +39,15 @@ export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
           { credentials: "include" }
         );
 
-        if (!res.ok) throw new Error("Failed to fetch issues");
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(
+            `${res.status} ${res.statusText}: ${body?.error || "Failed"} ${
+              body?.details || ""
+            }`
+          );
+        }
+
         const data = await res.json();
         setIssues(data.slice(0, limit));
       } catch (err: any) {

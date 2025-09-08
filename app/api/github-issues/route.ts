@@ -2,12 +2,31 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth"; // see earlier step where we export options
+import { cookies } from "next/headers";
+
+export const dynamic = "force-dynamic"; // avoid any caching weirdness in dev/preview
 
 export async function GET(req: Request) {
+
+    const cookieHeader = cookies().toString();
     const session = await getServerSession(authOptions);
+
     if (!session?.user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json(
+            {
+                error: "Unauthorized",
+                hint: "No session in route handler",
+                hasCookieHeader: Boolean(cookieHeader),
+                cookieHeaderSample: cookieHeader?.slice(0, 120) || null,
+            },
+            { status: 401 }
+        );
     }
+
+    // const session = await getServerSession(authOptions);
+    // if (!session?.user) {
+    //     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // }
 
     const { searchParams } = new URL(req.url);
     const owner = searchParams.get("owner");
