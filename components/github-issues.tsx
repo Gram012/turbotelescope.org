@@ -32,14 +32,17 @@ type PendingClose = {
   issue: GitHubIssue;
   deadline: number; // epoch ms when it will fire
   duration: number; // ms total
-  timeoutId: number; // window.setTimeout id
+  timeoutId: number; // window.setTimeout id (for delayed commit)
 };
+
+const ANIM_MS = 200; // slide in/out duration (ms)
 
 export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
   const [issues, setIssues] = useState<GitHubIssue[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingClose[]>([]);
   const [now, setNow] = useState<number>(Date.now()); // for progress bars
+  const [entered, setEntered] = useState<Record<string, boolean>>({}); // controls slide-in/out
   const tickRef = useRef<number | null>(null);
 
   // Fetch issues (already filtered to signed-in user on the server)
@@ -86,8 +89,21 @@ export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Helper: start slide-out for a toast key, then remove after anim
+  const slideOutAndRemove = (key: string) => {
+    setEntered((e) => ({ ...e, [key]: false }));
+    setTimeout(() => {
+      setPending((prev) => prev.filter((p) => p.key !== key));
+      setEntered(({ [key]: _drop, ...rest }) => rest);
+    }, ANIM_MS);
+  };
+
   // Schedule a close with undo window
   const scheduleClose = (issue: GitHubIssue, delayMs = 10000) => {
+    // Prevent duplicates if already pending
+    const alreadyPending = pending.some((p) => p.issue.number === issue.number);
+    if (alreadyPending) return;
+
     // Optimistically hide from list
     setIssues((prev) => prev.filter((i) => i.number !== issue.number));
 
@@ -106,20 +122,26 @@ export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
           const body = await res.json().catch(() => ({}));
           throw new Error(body?.error || "Failed to close issue");
         }
-        // Success: drop the pending toast
-        setPending((prev) => prev.filter((p) => p.key !== key));
+        // Success: slide out and remove toast (if it still exists)
+        slideOutAndRemove(key);
       } catch (e: any) {
-        // Failure: restore issue and surface error
+        // Failure: restore issue and slide out/remove the toast
         setIssues((prev) => [issue, ...prev]);
-        setPending((prev) => prev.filter((p) => p.key !== key));
         setError(e.message || "Failed to close issue");
+        slideOutAndRemove(key);
       }
     }, delayMs);
 
+    // New toast goes to the END so newest is at the bottom
     setPending((prev) => [
       ...prev,
       { key, issue, deadline, duration: delayMs, timeoutId },
     ]);
+
+    // Trigger slide-in after mount
+    requestAnimationFrame(() => {
+      setEntered((e) => ({ ...e, [key]: true }));
+    });
   };
 
   // Undo a scheduled close
@@ -129,7 +151,8 @@ export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
     clearTimeout(entry.timeoutId);
     // Restore the issue to the list (at the top)
     setIssues((prev) => [entry.issue, ...prev]);
-    setPending((prev) => prev.filter((p) => p.key !== key));
+    // Slide-out, then remove
+    slideOutAndRemove(key);
   };
 
   return (
@@ -175,7 +198,7 @@ export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
         </CardContent>
       </Card>
 
-      {/* Corner toasts for UNDO */}
+      {/* Corner toasts for UNDO – stacked, newest at the bottom */}
       <div className="fixed bottom-4 right-4 flex flex-col gap-2 z-50">
         {pending.map((p) => {
           const remaining = Math.max(0, p.deadline - now);
@@ -187,36 +210,47 @@ export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
           return (
             <div
               key={p.key}
-              className="w-80 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden"
               role="status"
               aria-live="polite"
+              className={[
+                "w-80 rounded-xl border shadow-lg overflow-hidden",
+                // Tint
+                "bg-rose-50 border-rose-200",
+                // Slide-in/out from right + fade
+                "transform transition-all ease-out",
+                `duration-[${ANIM_MS}ms]`,
+                entered[p.key]
+                  ? "translate-x-0 opacity-100"
+                  : "translate-x-full opacity-0",
+              ].join(" ")}
             >
               <div className="p-3 flex items-start gap-3">
                 <div className="mt-0.5">
-                  <Check className="w-4 h-4 text-slate-700" />
+                  <Check className="w-4 h-4 text-rose-700" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-900">
+                  <p className="text-sm font-medium text-rose-900">
                     Issue scheduled to close
                   </p>
-                  <p className="text-xs text-slate-600 line-clamp-2">
+                  <p className="text-xs text-rose-700/80 line-clamp-2">
                     #{p.issue.number} — {p.issue.title}
                   </p>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 px-2"
+                  className="h-7 px-2 text-rose-800 hover:text-rose-900"
                   onClick={() => undoClose(p.key)}
                   title="Undo"
                 >
                   <RotateCcw className="w-4 h-4" />
                 </Button>
               </div>
+
               {/* Countdown bar */}
-              <div className="h-1 bg-slate-100">
+              <div className="h-1 bg-rose-100">
                 <div
-                  className="h-full bg-gradient-to-r from-blue-600 to-purple-600 transition-[width] duration-100 ease-linear"
+                  className="h-full transition-[width] duration-100 ease-linear bg-gradient-to-r from-rose-500 to-orange-500"
                   style={{ width: `${pct}%` }}
                 />
               </div>
