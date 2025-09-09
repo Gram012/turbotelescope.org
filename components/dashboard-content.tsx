@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,12 +23,11 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { InviteMemberModal } from "@/components/invite-member-modal";
 import { AuthGuard } from "@/components/auth-guard";
 import { GitHubIssues } from "@/components/github-issues";
-
 import {
   Bell,
   Search,
   Check,
-  XIcon,
+  X as XIcon,
   BarChart,
   Telescope,
   MoreHorizontal,
@@ -37,15 +37,27 @@ type DashboardContentProps = {
   owner?: string;
   repo?: string;
   showWazAlerts?: boolean;
-  /** extra controls rendered in the header actions (right side) */
-  impersonationControls?: React.ReactNode;
+  impersonationControls?: ReactNode;
+  /** If true, DO NOT wrap with AuthGuard (useful on /admin, already gated server-side) */
+  disableAuthGuard?: boolean;
 };
+
+function MaybeGuard({
+  disabled,
+  children,
+}: {
+  disabled?: boolean;
+  children: ReactNode;
+}) {
+  return disabled ? <>{children}</> : <AuthGuard>{children}</AuthGuard>;
+}
 
 export function DashboardContent({
   owner = "patkel",
   repo = "turbo_telescope",
   showWazAlerts = true,
   impersonationControls,
+  disableAuthGuard = false,
 }: DashboardContentProps) {
   const { data: session } = useSession();
   const user = session?.user;
@@ -136,7 +148,7 @@ export function DashboardContent({
   ];
 
   return (
-    <AuthGuard>
+    <MaybeGuard disabled={disableAuthGuard}>
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
@@ -154,7 +166,6 @@ export function DashboardContent({
                     className="pl-10 w-64 border-slate-300"
                   />
                 </div>
-                {/* 👇 your toggle/exit buttons appear here when on /admin */}
                 {impersonationControls}
                 <Button variant="ghost" size="sm">
                   <Bell className="w-4 h-4" />
@@ -165,7 +176,7 @@ export function DashboardContent({
 
           {/* Main Content */}
           <main className="flex-1 space-y-4 p-4 md:p-6">
-            {/* Welcome Section */}
+            {/* Welcome */}
             <div className="mb-8">
               <h2 className="text-3xl font-bold text-slate-900 mb-2">
                 Welcome back, {user?.name || "User"}
@@ -212,7 +223,7 @@ export function DashboardContent({
 
             {/* Content Grid */}
             <div className="grid lg:grid-cols-3 gap-6">
-              {/* Recent Activity + Issues */}
+              {/* Left: Activity + Issues */}
               <div className="lg:col-span-2 space-y-6">
                 <Card className="border-slate-200">
                   <CardHeader>
@@ -271,13 +282,11 @@ export function DashboardContent({
                   </CardContent>
                 </Card>
 
-                {/* GitHub Issues (component already renders a Card) */}
                 <GitHubIssues owner={owner} repo={repo} />
               </div>
 
-              {/* Right column */}
+              {/* Right: Alerts */}
               <div className="space-y-6">
-                {/* WAZ Alerts — admin only via prop */}
                 {showWazAlerts && (
                   <Card className="border-slate-200">
                     <CardHeader>
@@ -329,7 +338,6 @@ export function DashboardContent({
                   </Card>
                 )}
 
-                {/* Prototype Alerts — shown for both */}
                 <Card className="border-slate-200">
                   <CardHeader>
                     <div className="flex items-center justify-between">
@@ -343,7 +351,30 @@ export function DashboardContent({
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {recentPtype.map((u, idx) => (
+                      {[
+                        {
+                          name: "Opening Enclosure",
+                          email: "",
+                          status: "6/2 - 21:16",
+                        },
+                        {
+                          name: "Closing Ensclosure",
+                          email: "",
+                          status: "6/2 - 17:37",
+                        },
+                        {
+                          name: "Night: False",
+                          email:
+                            "No Clouds: True, Low Wind: True, No Rain: True",
+                          status: "6/2 - 17:37",
+                        },
+                        {
+                          name: "TurboSitter",
+                          email:
+                            "Bad observing conditions and enclosure still open",
+                          status: "6/2 - 17:37",
+                        },
+                      ].map((u, idx) => (
                         <div key={idx} className="flex items-center space-x-3">
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-slate-900 truncate">
@@ -369,6 +400,6 @@ export function DashboardContent({
           </main>
         </SidebarInset>
       </SidebarProvider>
-    </AuthGuard>
+    </MaybeGuard>
   );
 }
