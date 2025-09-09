@@ -32,46 +32,40 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
+import { useMemo } from "react";
 
-const navigationItems = [
-  {
-    title: "Image Health Website",
-    url: "/dashboard",
-    icon: BarChart3,
-  },
-  {
-    title: "Team Members",
-    url: "/dashboard/users",
-    icon: Users,
-  },
-  {
-    title: "WAZ",
-    url: "/dashboard/analytics",
-    icon: HardDrive,
-  },
+type NavItem = { title: string; url: string; icon: any; external?: boolean };
+
+const navigationItems: NavItem[] = [
+  { title: "Image Health Website", url: "/dashboard", icon: BarChart3 },
+  { title: "Team Members", url: "/dashboard/users", icon: Users },
+  { title: "WAZ", url: "/dashboard/analytics", icon: HardDrive },
   {
     title: "BitWarden",
     url: "https://vault.bitwarden.com/#/vault",
     icon: KeyIcon,
+    external: true,
   },
-  {
-    title: "SkyPortal",
-    url: "/dashboard/reports",
-    icon: Shell,
-  },
+  { title: "SkyPortal", url: "/dashboard/reports", icon: Shell },
 ];
 
-const settingsItems = [
-  {
-    title: "General Settings",
-    url: "/dashboard/settings",
-    icon: Settings,
-  },
+const settingsItems: NavItem[] = [
+  { title: "General Settings", url: "/dashboard/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
   const { data: session } = useSession();
-  const user = session?.user;
+  const user = session?.user as any;
+  const isAdmin =
+    user?.role === "admin" || (user?.login || "").toLowerCase() === "gram012";
+
+  const filteredNav = useMemo(
+    () =>
+      navigationItems.filter(
+        (item) => !(item.title === "BitWarden" && !isAdmin)
+      ),
+    [isAdmin]
+  );
 
   return (
     <Sidebar>
@@ -91,14 +85,27 @@ export function AppSidebar() {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationItems.map((item) => (
+              {filteredNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link href={item.url} target="blank">
-                      <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
+                  {item.external ? (
+                    <SidebarMenuButton asChild>
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <item.icon className="w-4 h-4" />
+                        <span>{item.title}</span>
+                      </a>
+                    </SidebarMenuButton>
+                  ) : (
+                    <SidebarMenuButton asChild>
+                      <Link href={item.url}>
+                        <item.icon className="w-4 h-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -135,7 +142,7 @@ export function AppSidebar() {
                     <AvatarFallback>
                       {user?.name
                         ?.split(" ")
-                        .map((n) => n[0])
+                        .map((n: string) => n[0])
                         .join("") || "U"}
                     </AvatarFallback>
                   </Avatar>
