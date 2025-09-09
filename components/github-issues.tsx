@@ -87,7 +87,7 @@ export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
   }, []);
 
   // Schedule a close with undo window
-  const scheduleClose = (issue: GitHubIssue, delayMs = 5000) => {
+  const scheduleClose = (issue: GitHubIssue, delayMs = 10000) => {
     // Optimistically hide from list
     setIssues((prev) => prev.filter((i) => i.number !== issue.number));
 
