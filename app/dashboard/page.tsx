@@ -4,11 +4,13 @@ import { authOptions } from "@/lib/auth";
 import { isActiveUser } from "@/lib/authz"; // or inline check using role/isActive
 import { redirect } from "next/navigation";
 import { DashboardContent } from "@/components/dashboard-content";
+import { isAdminSession } from "@/lib/authz";
 
 export default async function UserDashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/api/auth/signin?callbackUrl=/dashboard");
   if (!isActiveUser(session)) redirect("/access-pending");
+  if (isAdminSession(session)) redirect("/admin");
 
   // User view: identical layout, but without WAZ Alerts
   return (
