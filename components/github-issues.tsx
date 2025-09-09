@@ -216,7 +216,7 @@ export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
               {/* Countdown bar */}
               <div className="h-1 bg-slate-100">
                 <div
-                  className="h-full bg-slate-800 transition-[width] duration-100 ease-linear"
+                  className="h-full bg-gradient-to-r from-blue-600 to-purple-600 transition-[width] duration-100 ease-linear"
                   style={{ width: `${pct}%` }}
                 />
               </div>
