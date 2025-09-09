@@ -12,7 +12,9 @@ import {
 import { revalidatePath } from "next/cache";
 import UsersClient from "./users-client";
 
-export const runtime = "nodejs";
+export const runtime = "nodejs"; // required for pg
+// (optional) if you see caching weirdness when mutating:
+// export const dynamic = "force-dynamic";
 
 export default async function TeamMembersPage() {
   const session = await getServerSession(authOptions);
@@ -21,8 +23,15 @@ export default async function TeamMembersPage() {
 
   const admin = isAdminSession(session);
 
-  // Fetch all users. If not admin, you could filter here to only active users.
-  const users = await listUsers();
+  let users: DBUser[] = [];
+  let loadError: string | null = null;
+
+  try {
+    users = await listUsers();
+  } catch (e: any) {
+    loadError =
+      e?.message || "Failed to load users (check DB connection & schema).";
+  }
 
   // --- server actions ---
   async function addUserAction(formData: FormData) {
@@ -56,6 +65,7 @@ export default async function TeamMembersPage() {
       isAdmin={admin}
       addUserAction={addUserAction}
       changeRoleAction={changeRoleAction}
+      loadError={loadError}
     />
   );
 }

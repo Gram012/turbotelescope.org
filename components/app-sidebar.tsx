@@ -55,17 +55,19 @@ const settingsItems: NavItem[] = [
 
 export function AppSidebar() {
   const { data: session } = useSession();
-  const user = session?.user as any;
-  const isAdmin =
-    user?.role === "admin" || (user?.login || "").toLowerCase() === "gram012";
+  const role = (session?.user as any)?.role ?? "user";
+  const login = ((session?.user as any)?.login || "").toLowerCase();
+  const isAdmin = role === "admin" || login === "gram012";
 
+  // 🔒 Hide BitWarden for non-admins
   const filteredNav = useMemo(
-    () =>
-      navigationItems.filter(
-        (item) => !(item.title === "BitWarden" && !isAdmin)
-      ),
+    () => navigationItems.filter((i) => !(i.title === "BitWarden" && !isAdmin)),
     [isAdmin]
   );
+
+  const displayName =
+    session?.user?.name || (session?.user as any)?.login || "User";
+  const avatar = (session?.user as any)?.image ?? "/placeholder-user.jpg";
 
   return (
     <Sidebar>
@@ -138,15 +140,17 @@ export function AppSidebar() {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
                   <Avatar className="w-6 h-6">
-                    <AvatarImage src={user?.image ?? "/placeholder-user.jpg"} />
+                    <AvatarImage src={avatar} />
                     <AvatarFallback>
-                      {user?.name
-                        ?.split(" ")
-                        .map((n: string) => n[0])
-                        .join("") || "U"}
+                      {(displayName || "U")
+                        .split(" ")
+                        .map((n: any[]) => n[0])
+                        .join("")
+                        .slice(0, 2)
+                        .toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <span>{user?.name || "User"}</span>
+                  <span>{displayName}</span>
                   <ChevronUp className="ml-auto w-4 h-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
