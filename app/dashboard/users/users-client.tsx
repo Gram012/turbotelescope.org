@@ -1,5 +1,5 @@
+// app/dashboard/users/users-client.tsx
 "use client";
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,19 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { MoreHorizontal } from "lucide-react";
-
-export type DBUser = {
-  id: number;
-  github_id: string | number | null;
-  github_login: string | null;
-  name: string | null;
-  email: string | null;
-  avatar_url: string | null;
-  role: "user" | "admin";
-  is_active: boolean;
-  created_at: string;
-  last_login_at: string | null;
-};
+export type DBUser = import("@/lib/user").DBUser;
 
 export default function UsersClient({
   users,
@@ -52,16 +40,13 @@ export default function UsersClient({
   const [newLogin, setNewLogin] = useState("");
   const [confirming, setConfirming] = useState(false);
 
-  const fmt = (v: any) =>
-    v === null || v === undefined || v === "" ? "–" : String(v);
+  const fmt = (v: any) => ((v ?? "") === "" ? "–" : String(v));
   const sorted = [...users].sort(
-    (a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    (a, b) => +new Date(b.created_at) - +new Date(a.created_at)
   );
 
   return (
     <div className="space-y-6">
-      {/* Top row */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold">Team Members</h2>
@@ -69,7 +54,6 @@ export default function UsersClient({
             Manage access and roles for your organization.
           </p>
         </div>
-
         {isAdmin && (
           <Dialog
             open={openAdd}
@@ -89,7 +73,6 @@ export default function UsersClient({
                     : "Add a new user by GitHub username"}
                 </DialogTitle>
               </DialogHeader>
-
               {!confirming ? (
                 <form
                   className="space-y-4"
@@ -108,8 +91,7 @@ export default function UsersClient({
                       onChange={(e) => setNewLogin(e.target.value)}
                     />
                     <p className="text-xs text-slate-500 mt-1">
-                      The user will be added as a <strong>standard user</strong>
-                      . You can change roles later.
+                      They’ll be added as a <strong>standard user</strong>.
                     </p>
                   </div>
                   <DialogFooter>
@@ -145,10 +127,7 @@ export default function UsersClient({
                       <span className="font-semibold">
                         @{newLogin.trim().toLowerCase()}
                       </span>{" "}
-                      as a <span className="font-semibold">standard user</span>?
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      They will be able to sign in once activated (if required).
+                      as a standard user?
                     </p>
                   </div>
                   <DialogFooter className="mt-4">
@@ -168,7 +147,6 @@ export default function UsersClient({
         )}
       </div>
 
-      {/* DB load error banner */}
       {loadError && (
         <div className="rounded-lg border border-red-200 bg-red-50 text-red-700 p-3 text-sm">
           {loadError}
@@ -177,7 +155,6 @@ export default function UsersClient({
 
       <Separator />
 
-      {/* Users grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {sorted.map((u) => (
           <UserCard
@@ -208,7 +185,6 @@ function UserCard({
   fmt: (v: any) => string;
 }) {
   const [open, setOpen] = useState(false);
-
   return (
     <Card className="border-slate-200">
       <CardHeader className="pb-3">
@@ -234,7 +210,6 @@ function UserCard({
               {fmt(user.name)} {user.email ? `• ${user.email}` : ""}
             </CardDescription>
           </div>
-
           <Button
             variant="ghost"
             size="sm"
@@ -245,9 +220,7 @@ function UserCard({
           </Button>
         </div>
       </CardHeader>
-
       <CardContent className="space-y-4">
-        {/* Admin controls */}
         {isAdmin && (
           <form action={changeRoleAction} className="flex items-center gap-2">
             <input
@@ -269,26 +242,19 @@ function UserCard({
             </Button>
           </form>
         )}
-
-        {/* Details dropdown */}
         {open && (
           <div className="rounded-lg border bg-slate-50 p-3 text-sm">
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
               <dt className="text-slate-500">ID</dt>
               <dd className="text-slate-900">{fmt(user.id)}</dd>
-
               <dt className="text-slate-500">GitHub ID</dt>
               <dd className="text-slate-900">{fmt(user.github_id)}</dd>
-
               <dt className="text-slate-500">GitHub Login</dt>
               <dd className="text-slate-900">{fmt(user.github_login)}</dd>
-
               <dt className="text-slate-500">Name</dt>
               <dd className="text-slate-900">{fmt(user.name)}</dd>
-
               <dt className="text-slate-500">Email</dt>
               <dd className="text-slate-900">{fmt(user.email)}</dd>
-
               <dt className="text-slate-500">Avatar</dt>
               <dd className="text-slate-900">
                 {user.avatar_url ? (
@@ -304,17 +270,14 @@ function UserCard({
                   "–"
                 )}
               </dd>
-
               <dt className="text-slate-500">Active</dt>
               <dd className="text-slate-900">
                 {user.is_active ? "true" : "false"}
               </dd>
-
               <dt className="text-slate-500">Created</dt>
               <dd className="text-slate-900">
                 {fmt(new Date(user.created_at).toLocaleString())}
               </dd>
-
               <dt className="text-slate-500">Last Login</dt>
               <dd className="text-slate-900">
                 {user.last_login_at

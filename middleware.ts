@@ -1,47 +1,28 @@
-import { withAuth, type NextRequestWithAuth } from "next-auth/middleware";
-import { NextResponse } from "next/server";
+// middleware.ts
+import { withAuth } from "next-auth/middleware";
 
-const SUPER_ADMINS = new Set(["gram012"]); // 👈 lowercase
+export default withAuth({
+    callbacks: {
+        authorized: ({ token, req }) => {
+            const path = req.nextUrl.pathname;
 
-export default withAuth(
-    function middleware(req: NextRequestWithAuth) {
-        const { nextUrl } = req;
-        const path = nextUrl.pathname;
-        const token = req.nextauth.token as any;
-
-        if (!token) return NextResponse.next(); // authorized() handles redirect to signIn
-
-        const login = typeof token.login === "string" ? token.login.toLowerCase() : undefined; // 👈 normalize
-        const role = token.role as "admin" | "user" | undefined;
-        const isActive = token.isActive as boolean | undefined;
-        const isAdmin = (login && SUPER_ADMINS.has(login)) || role === "admin";
-
-        if (path.startsWith("/admin")) {
-            if (!isAdmin) {
-                const url = nextUrl.clone();
-                url.pathname = "/dashboard";
-                url.search = "";
-                return NextResponse.redirect(url);
+            // not signed in → block dashboard/admin
+            if (!token && (path.startsWith("/dashboard") || path.startsWith("/admin"))) {
+                return false;
             }
-            return NextResponse.next();
-        }
 
-        if (path.startsWith("/dashboard")) {
-            if (isAdmin || isActive) return NextResponse.next();
-            const url = nextUrl.clone();
-            url.pathname = "/access-pending";
-            url.search = "";
-            return NextResponse.redirect(url);
-        }
+            // admin-only routes
+            if (path.startsWith("/admin")) {
+                const role = (token as any)?.role;
+                const login = ((token as any)?.login || "").toLowerCase();
+                return role === "admin" || login === "gram012";
+            }
 
-        return NextResponse.next();
-    },
-    {
-        callbacks: {
-            authorized: ({ token }) => !!token, // must be signed in
+            return true;
         },
-        pages: { signIn: "/api/auth/signin" },
-    }
-);
+    },
+});
 
-export const config = { matcher: ["/dashboard/:path*", "/admin/:path*"] };
+export const config = {
+    matcher: ["/dashboard/:path*", "/admin/:path*"],
+};
