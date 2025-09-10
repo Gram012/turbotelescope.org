@@ -23,6 +23,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { InviteMemberModal } from "@/components/invite-member-modal";
 import { AuthGuard } from "@/components/auth-guard";
 import { GitHubIssues } from "@/components/github-issues";
+
 import {
   Bell,
   Search,
@@ -38,7 +39,7 @@ type DashboardContentProps = {
   repo?: string;
   showWazAlerts?: boolean;
   impersonationControls?: ReactNode;
-  /** If true, DO NOT wrap with AuthGuard (useful on /admin, already gated server-side) */
+  /** Skip AuthGuard (useful on /admin where middleware + server checks already protect) */
   disableAuthGuard?: boolean;
 };
 
@@ -166,7 +167,10 @@ export function DashboardContent({
                     className="pl-10 w-64 border-slate-300"
                   />
                 </div>
+
+                {/* Admin-only controls (View as default / Exit user view) */}
                 {impersonationControls}
+
                 <Button variant="ghost" size="sm">
                   <Bell className="w-4 h-4" />
                 </Button>
@@ -267,7 +271,7 @@ export function DashboardContent({
                           key={index}
                           className="flex items-center space-x-4 p-3 rounded-lg hover:bg-slate-50"
                         >
-                          <div className="w-2 h-2 bg-blue-600 rounded-full" />
+                          <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-slate-900">
                               {activity.action}
@@ -282,11 +286,13 @@ export function DashboardContent({
                   </CardContent>
                 </Card>
 
+                {/* GitHub Issues (component already renders a Card) */}
                 <GitHubIssues owner={owner} repo={repo} />
               </div>
 
               {/* Right: Alerts */}
               <div className="space-y-6">
+                {/* WAZ Alerts — admin view only */}
                 {showWazAlerts && (
                   <Card className="border-slate-200">
                     <CardHeader>
@@ -338,6 +344,7 @@ export function DashboardContent({
                   </Card>
                 )}
 
+                {/* Prototype Alerts — shown for both */}
                 <Card className="border-slate-200">
                   <CardHeader>
                     <div className="flex items-center justify-between">
@@ -351,30 +358,7 @@ export function DashboardContent({
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {[
-                        {
-                          name: "Opening Enclosure",
-                          email: "",
-                          status: "6/2 - 21:16",
-                        },
-                        {
-                          name: "Closing Ensclosure",
-                          email: "",
-                          status: "6/2 - 17:37",
-                        },
-                        {
-                          name: "Night: False",
-                          email:
-                            "No Clouds: True, Low Wind: True, No Rain: True",
-                          status: "6/2 - 17:37",
-                        },
-                        {
-                          name: "TurboSitter",
-                          email:
-                            "Bad observing conditions and enclosure still open",
-                          status: "6/2 - 17:37",
-                        },
-                      ].map((u, idx) => (
+                      {recentPtype.map((u, idx) => (
                         <div key={idx} className="flex items-center space-x-3">
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-slate-900 truncate">

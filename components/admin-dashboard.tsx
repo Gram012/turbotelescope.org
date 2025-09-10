@@ -1,9 +1,15 @@
 "use client";
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from "lucide-react";
 import { DashboardContent } from "@/components/dashboard-content";
 
+/**
+ * AdminDashboard toggles between normal admin view and "View as default user".
+ * - In user view: WAZ Alerts hidden, blue ring overlay, Exit control.
+ * - Sidebar remains visible in BOTH modes (rendered by DashboardContent).
+ */
 export function AdminDashboard() {
   const [userView, setUserView] = useState(false);
 
@@ -26,8 +32,10 @@ export function AdminDashboard() {
         repo="turbo_telescope"
         showWazAlerts={!userView}
         impersonationControls={impersonationControls}
-        disableAuthGuard // 👈 important on /admin
+        disableAuthGuard
       />
+
+      {/* Blue ring + label when impersonating (covers entire viewport incl. sidebar) */}
       {userView && (
         <>
           <div className="pointer-events-none fixed inset-2 rounded-2xl ring-4 ring-blue-500 z-[60]" />

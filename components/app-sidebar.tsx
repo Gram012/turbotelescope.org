@@ -59,7 +59,7 @@ export function AppSidebar() {
   const login = ((session?.user as any)?.login || "").toLowerCase();
   const isAdmin = role === "admin" || login === "gram012";
 
-  // 🔒 Hide BitWarden for non-admins
+  // Hide BitWarden for non-admins
   const filteredNav = useMemo(
     () => navigationItems.filter((i) => !(i.title === "BitWarden" && !isAdmin)),
     [isAdmin]

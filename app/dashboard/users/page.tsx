@@ -12,9 +12,8 @@ import {
 import { revalidatePath } from "next/cache";
 import UsersClient from "./users-client";
 
-export const runtime = "nodejs"; // required for pg
-// (optional) if you see caching weirdness when mutating:
-// export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+// export const dynamic = "force-dynamic"; // uncomment if you see caching during mutations
 
 export default async function TeamMembersPage() {
   const session = await getServerSession(authOptions);
@@ -30,7 +29,8 @@ export default async function TeamMembersPage() {
     users = await listUsers();
   } catch (e: any) {
     loadError =
-      e?.message || "Failed to load users (check DB connection & schema).";
+      e?.message ||
+      "Failed to load users (check DB connection & schema in production).";
   }
 
   // --- server actions ---
