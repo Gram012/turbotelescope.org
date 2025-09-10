@@ -29,6 +29,7 @@ import {
   HardDrive,
   ChevronUp,
   LogOut,
+  LayoutDashboard,
 } from "lucide-react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
@@ -47,6 +48,7 @@ const navigationItems: NavItem[] = [
     external: true,
   },
   { title: "SkyPortal", url: "/dashboard/reports", icon: Shell },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
 ];
 
 const settingsItems: NavItem[] = [
@@ -114,7 +116,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
+        {/* <SidebarGroup>
           <SidebarGroupLabel>Settings</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -130,7 +132,7 @@ export function AppSidebar() {
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
-        </SidebarGroup>
+        </SidebarGroup> */}
       </SidebarContent>
 
       <SidebarFooter>
