@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { MoreHorizontal } from "lucide-react";
 
-type DBUser = {
+export type DBUser = {
   id: number;
   github_id: string | number | null;
   github_login: string | null;
@@ -60,11 +60,11 @@ export default function UsersClient({
   );
 
   return (
-    <main className="p-6 space-y-6">
-      {/* Header */}
+    <div className="space-y-6">
+      {/* Top row */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Team Members</h1>
+          <h2 className="text-2xl font-semibold">Team Members</h2>
           <p className="text-slate-600 mt-1">
             Manage access and roles for your organization.
           </p>
@@ -148,8 +148,7 @@ export default function UsersClient({
                       as a <span className="font-semibold">standard user</span>?
                     </p>
                     <p className="text-xs text-slate-500">
-                      They will be able to sign in once activated (if your auth
-                      flow requires it) and can be promoted to admin later.
+                      They will be able to sign in once activated (if required).
                     </p>
                   </div>
                   <DialogFooter className="mt-4">
@@ -178,7 +177,7 @@ export default function UsersClient({
 
       <Separator />
 
-      {/* Users list */}
+      {/* Users grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {sorted.map((u) => (
           <UserCard
@@ -193,7 +192,7 @@ export default function UsersClient({
           <p className="text-slate-500">No users found.</p>
         )}
       </div>
-    </main>
+    </div>
   );
 }
 
