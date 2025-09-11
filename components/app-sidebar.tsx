@@ -38,16 +38,31 @@ import { useMemo } from "react";
 type NavItem = { title: string; url: string; icon: any; external?: boolean };
 
 const navigationItems: NavItem[] = [
-  { title: "Image Health Website", url: "/dashboard", icon: BarChart3 },
+  {
+    title: "Image Health Website",
+    url: "popcorn.spa.umn.edu:5001/IHW",
+    icon: BarChart3,
+    external: true,
+  },
   { title: "Team Members", url: "/dashboard/users", icon: Users },
-  { title: "WAZ", url: "/dashboard/analytics", icon: HardDrive },
+  {
+    title: "WAZ",
+    url: "https://spa-u-waziyata.spa.umn.edu/login",
+    icon: HardDrive,
+    external: true,
+  },
   {
     title: "BitWarden",
     url: "https://vault.bitwarden.com/#/vault",
     icon: KeyIcon,
     external: true,
   },
-  { title: "SkyPortal", url: "/dashboard/reports", icon: Shell },
+  {
+    title: "SkyPortal",
+    url: "wicapi.spa.umn.edu:9000",
+    icon: Shell,
+    external: true,
+  },
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
 ];
 
