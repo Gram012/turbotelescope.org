@@ -23,6 +23,16 @@ export async function listUsers(): Promise<DBUser[]> {
   return rows;
 }
 
+export async function getUserByGitHubId(ghId: number): Promise<DBUser | null> {
+  const { rows } = await sql<DBUser>`
+    SELECT id, github_id, github_login, name, email, avatar_url, role, is_active, created_at, last_login_at
+    FROM user_data.users
+    WHERE github_id = ${ghId}
+    LIMIT 1
+  `;
+  return rows[0] ?? null;
+}
+
 export async function getUserByLogin(login: string): Promise<DBUser | null> {
   const { rows } = await sql<DBUser>`
     SELECT id, github_id, github_login, name, email, avatar_url, role, is_active, created_at, last_login_at
