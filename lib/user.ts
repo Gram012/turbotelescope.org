@@ -55,6 +55,23 @@ export async function setUserRole(login: string, role: "user" | "admin"): Promis
   `;
 }
 
+/** Soft-remove: mark as inactive (recommended default) */
+export async function deactivateUser(login: string): Promise<void> {
+  await sql`
+    UPDATE user_data.users
+    SET is_active = FALSE
+    WHERE github_login = ${login.toLowerCase()}
+  `;
+}
+
+/** Hard-remove: delete the row (irreversible) */
+export async function deleteUserByLogin(login: string): Promise<void> {
+  await sql`
+    DELETE FROM user_data.users
+    WHERE github_login = ${login.toLowerCase()}
+  `;
+}
+
 export async function upsertUserFromGitHubProfile(p: {
   github_id?: number;
   github_login: string;

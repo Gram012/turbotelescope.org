@@ -2,14 +2,18 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { isActiveUser, isAdminSession } from "@/lib/authz";
+import { revalidatePath } from "next/cache";
+
+import { isAdminSession, SUPER_ADMINS } from "@/lib/authz";
 import {
-  addOrActivateUser,
   listUsers,
+  addOrActivateUser,
   setUserRole,
+  deactivateUser,
+  deleteUserByLogin,
   type DBUser,
 } from "@/lib/user";
-import { revalidatePath } from "next/cache";
+
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 
@@ -17,28 +21,34 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function TeamMembersPage() {
+  // Require sign-in
   const session = await getServerSession(authOptions);
   if (!session) redirect("/api/auth/signin?callbackUrl=/dashboard/users");
-  if (!isActiveUser(session)) redirect("/access-pending");
 
   const isAdmin = isAdminSession(session);
 
+  // Load users (and surface any DB error in the client)
   let users: DBUser[] = [];
   let loadError: string | null = null;
+
   try {
     users = await listUsers();
   } catch (e: any) {
     loadError = e?.message || "Failed to load users.";
   }
 
+  // --- Server Actions (TS-safe via type guard) ---
+
   async function addUserAction(formData: FormData) {
     "use server";
     const s = await getServerSession(authOptions);
     if (!isAdminSession(s)) return;
-    const login = (formData.get("github_login") as string | null)
-      ?.trim()
+
+    const login = String(formData.get("github_login") || "")
+      .trim()
       .toLowerCase();
     if (!login) return;
+
     await addOrActivateUser(login, "user");
     revalidatePath("/dashboard/users");
   }
@@ -47,15 +57,42 @@ export default async function TeamMembersPage() {
     "use server";
     const s = await getServerSession(authOptions);
     if (!isAdminSession(s)) return;
-    const login = (formData.get("login") as string | null)
-      ?.trim()
+
+    const login = String(formData.get("login") || "")
+      .trim()
       .toLowerCase();
-    const role = formData.get("role") as "user" | "admin" | null;
+    const role = String(formData.get("role") || "");
     if (!login || (role !== "user" && role !== "admin")) return;
-    await setUserRole(login, role);
+
+    await setUserRole(login, role as "user" | "admin");
     revalidatePath("/dashboard/users");
   }
 
+  async function removeUserAction(formData: FormData) {
+    "use server";
+    const s = await getServerSession(authOptions);
+    if (!isAdminSession(s)) return;
+
+    const actorLogin = String((s.user as any).login || "").toLowerCase();
+    const login = String(formData.get("login") || "")
+      .trim()
+      .toLowerCase();
+    const mode = String(formData.get("mode") || "deactivate"); // "deactivate" | "delete"
+
+    if (!login) return;
+    // Safety: cannot remove yourself or any super admin
+    if (login === actorLogin) return;
+    if (SUPER_ADMINS.has(login)) return;
+
+    if (mode === "delete") {
+      await deleteUserByLogin(login);
+    } else {
+      await deactivateUser(login);
+    }
+    revalidatePath("/dashboard/users");
+  }
+
+  // Client component render
   const UsersClient = (await import("./users-client")).default;
 
   return (
@@ -71,6 +108,7 @@ export default async function TeamMembersPage() {
             isAdmin={isAdmin}
             addUserAction={addUserAction}
             changeRoleAction={changeRoleAction}
+            removeUserAction={removeUserAction}
             loadError={loadError}
           />
         </main>

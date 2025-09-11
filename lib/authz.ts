@@ -1,17 +1,19 @@
-// lib/authz.ts
 import type { Session } from "next-auth";
 
-export const SUPER_ADMINS = new Set(["gram012"]); // lowercase override
+export const SUPER_ADMINS = new Set(["gram012"]); // lowercase
 
-export function isAdminSession(session: Session | null) {
-    const login = ((session?.user as any)?.login || "").toLowerCase();
-    const role = (session?.user as any)?.role as "admin" | "user" | undefined;
-    return SUPER_ADMINS.has(login) || role === "admin";
+// ✅ Type guard: narrows Session | null -> Session
+export function isAdminSession(session: Session | null): session is Session {
+    if (!session) return false;
+    const login = ((session.user as any)?.login || "").toLowerCase();
+    const role = (session.user as any)?.role;
+    return role === "admin" || SUPER_ADMINS.has(login);
 }
 
-export function isActiveUser(session: Session | null) {
+// Optional: also make an "active user" guard if you use it elsewhere
+export function isActiveSession(session: Session | null): session is Session {
     if (!session) return false;
-    if (isAdminSession(session)) return true;
-    // optional: gate on a DB-active flag in session if you store it
-    return true;
+    const isActive = (session as any)?.is_active ?? true;
+    const role = (session.user as any)?.role;
+    return role === "admin" || isActive;
 }
