@@ -1,10 +1,8 @@
 // lib/auth.ts
 import type { NextAuthOptions } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
-import { upsertUserFromGitHubProfile } from "@/lib/user";
+import { getUserByLogin, upsertUserFromGitHubProfile } from "@/lib/user";
 import { SUPER_ADMINS } from "@/lib/authz";
-
-const allowedUsers = ["Gram012", "mssgill", "patkel"]; // keep your allowlist
 
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -15,16 +13,31 @@ export const authOptions: NextAuthOptions = {
         }),
     ],
     callbacks: {
+        // 1) Only allow if SUPER_ADMIN or user exists in DB and is_active
         async signIn({ profile }) {
             const gh = profile as any;
             const login = (gh?.login || "").toLowerCase();
             if (!login) return false;
 
-            // allowlist gate (keep if you still want this)
-            const allowed = allowedUsers.map((u) => u.toLowerCase());
-            if (!allowed.includes(login) && !SUPER_ADMINS.has(login)) return false;
+            if (SUPER_ADMINS.has(login)) {
+                // keep super-admin bypass (bootstrap)
+                await upsertUserFromGitHubProfile({
+                    github_id: gh?.id,
+                    github_login: login,
+                    name: gh?.name ?? null,
+                    email: gh?.email ?? null,
+                    avatar_url: gh?.avatar_url ?? null,
+                });
+                return true;
+            }
 
-            // upsert to DB
+            const dbUser = await getUserByLogin(login);
+            if (!dbUser || !dbUser.is_active) {
+                // Not invited/activated
+                return false;
+            }
+
+            // Update profile info and last_login_at
             await upsertUserFromGitHubProfile({
                 github_id: gh?.id,
                 github_login: login,
@@ -32,26 +45,35 @@ export const authOptions: NextAuthOptions = {
                 email: gh?.email ?? null,
                 avatar_url: gh?.avatar_url ?? null,
             });
-
             return true;
         },
 
-        async jwt({ token, account, profile }) {
-            if (account && profile) {
-                token.login = (profile as any).login?.toLowerCase();
-                token.accessToken = account.access_token;
-                token.role = SUPER_ADMINS.has(token.login as string) ? "admin" : "user";
+        // 2) Put role/is_active into the JWT (so middleware can use it)
+        async jwt({ token }) {
+            const login = ((token as any)?.login || (token as any)?.name || "").toLowerCase();
+            (token as any).login = login;
+
+            // SUPER_ADMIN takes priority
+            if (SUPER_ADMINS.has(login)) {
+                (token as any).role = "admin";
+                (token as any).is_active = true;
+                return token;
             }
-            if (!token.role && token.login) {
-                token.role = SUPER_ADMINS.has(token.login as string) ? "admin" : "user";
+
+            // Pull latest from DB (so role changes apply next request)
+            if (login) {
+                const dbUser = await getUserByLogin(login);
+                (token as any).role = (dbUser?.role as "admin" | "user") ?? "user";
+                (token as any).is_active = dbUser?.is_active ?? false;
             }
             return token;
         },
 
+        // 3) Expose on session
         async session({ session, token }) {
-            (session.user as any).login = token.login as string;
-            (session.user as any).role = token.role as "admin" | "user";
-            (session as any).accessToken = token.accessToken as string;
+            (session.user as any).login = (token as any).login as string;
+            (session.user as any).role = (token as any).role as "admin" | "user";
+            (session as any).is_active = (token as any).is_active as boolean;
             return session;
         },
     },
