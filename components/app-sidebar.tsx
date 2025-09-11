@@ -40,7 +40,7 @@ type NavItem = { title: string; url: string; icon: any; external?: boolean };
 const navigationItems: NavItem[] = [
   {
     title: "Image Health Website",
-    url: "popcorn.spa.umn.edu:5001/IHW",
+    url: "http://popcorn.spa.umn.edu:5001/IHW",
     icon: BarChart3,
     external: true,
   },
@@ -59,7 +59,7 @@ const navigationItems: NavItem[] = [
   },
   {
     title: "SkyPortal",
-    url: "wicapi.spa.umn.edu:9000",
+    url: "http://wicapi.spa.umn.edu:9000",
     icon: Shell,
     external: true,
   },
