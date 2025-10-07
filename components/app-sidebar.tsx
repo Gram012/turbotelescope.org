@@ -30,6 +30,7 @@ import {
   ChevronUp,
   LogOut,
   LayoutDashboard,
+  ScanEye
 } from "lucide-react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
@@ -64,7 +65,9 @@ const navigationItems: NavItem[] = [
     external: true,
   },
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-];
+  { title: "Turbositter", url: "/dashboard/turbositter", icon: ScanEye  },
+
+ ];
 
 const settingsItems: NavItem[] = [
   { title: "General Settings", url: "/dashboard/settings", icon: Settings },
