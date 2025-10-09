@@ -1,29 +1,12 @@
 "use client";
 
-// NOTE: This single file contains a full, working UI for the new
-// /dashboard/turbositter route with three blocks: Weather, Cameras, Enclosure.
-// Weather is hydrated from Postgres via a serverless API route in this file
-// (using a tiny fetch to /api/turbositter/weather). The refresh button calls
-// router.refresh() so the server re-runs and re-reads from the DB.
-//
-// Drop this file at: app/dashboard/turbositter/page.tsx
-// Also add a sidebar link to "/dashboard/turbositter" in your layout/sidebar.
-//
-// ENV expected (either DATABASE_URL or discrete vars):
-// - DATABASE_URL (postgres://user:pass@host:port/dbname)
-//   or
-// - PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE
-//
-// Table expected (based on your inserter script): turbositter.mro_weather
-// Columns include (abbrev): clienttransactionid, servertransactionid,
-// errornumber, errormessage, avgperiod, cloudcover, dewpoint, humidity,
-// pressure, rainrate, skybrightness, skyquality, skytemp, starfwhm,
-// temperature, winddirection, windgust, windspeed, created_at (optional).
-// If created_at is absent, we order by servertransactionid desc.
+// /app/dashboard/turbositter/page.tsx
+// Client component for the TURBOSitter UI. Shows three blocks (Weather, Enclosure, Cameras)
+// and fetches latest weather data from /api/turbositter/weather.
+// NOTE: Do NOT export `metadata` from a client component.
 
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Metadata } from "next";
 import {
   Camera,
   Cloud,
@@ -36,15 +19,9 @@ import {
   Activity,
   Video,
   DoorClosed,
-  DoorOpen,
 } from "lucide-react";
 
-export const metadata: Metadata = {
-  title: "TURBOSitter · TURBO Dashboard",
-  description: "Hardware monitoring for TURBO Telescope",
-};
-
-// --- Types ---
+// --- Types shared with the API ---
 export type WeatherRow = {
   clienttransactionid: number | null;
   servertransactionid: number | null;
@@ -53,7 +30,7 @@ export type WeatherRow = {
   avgperiod: number | null;
   cloudcover: number | null; // fraction [0-1]
   dewpoint: number | null; // °C
-  humidity: number | null; // %
+  humidity: number | null; // % or [0-1] depending on source
   pressure: number | null; // hPa
   rainrate: number | null; // mm/hr
   skybrightness: number | null; // mag/arcsec^2 or a.u.
@@ -67,21 +44,20 @@ export type WeatherRow = {
   created_at?: string | null; // ISO if present
 };
 
-// --- Helpers ---
 function fmt(value: number | null | undefined, unit = "") {
   if (value === null || value === undefined) return "—";
   const isInt = Number.isInteger(value);
-  const s = isInt ? String(value) : value.toFixed(2);
+  const s = isInt ? String(value) : (value as number).toFixed(2);
   return unit ? `${s} ${unit}` : s;
 }
 
 function pct(value: number | null | undefined) {
   if (value === null || value === undefined) return "—";
-  const v = Math.max(0, Math.min(1, value));
-  return `${(v * 100).toFixed(0)}%`;
+  // Accept either 0-1 or 0-100 coming from DB
+  const v = value > 1 ? value / 100 : value;
+  return `${Math.max(0, Math.min(1, v)) * 100}%`.replace(".0%", "%");
 }
 
-// --- Client-side data fetcher to keep this file self-contained ---
 async function fetchLatestWeather(): Promise<WeatherRow | null> {
   try {
     const res = await fetch("/api/turbositter/weather", { cache: "no-store" });
@@ -115,9 +91,8 @@ export default function TurboSitterPage() {
           <div className="text-slate-500">Hardware Monitoring</div>
         </header>
 
-        {/* Grid of blocks */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* WEATHER CARD (spans 2 cols on large) */}
+          {/* WEATHER CARD */}
           <div className="lg:col-span-2">
             <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
@@ -129,7 +104,6 @@ export default function TurboSitterPage() {
                 </div>
                 <button
                   onClick={() => {
-                    router.refresh();
                     setLoading(true);
                     fetchLatestWeather().then((r) => {
                       setRow(r);
@@ -159,7 +133,7 @@ export default function TurboSitterPage() {
                     />
                     <KV
                       label="Humidity"
-                      value={pct(row.humidity ? row.humidity / 100 : null)}
+                      value={pct(row.humidity)}
                       icon={<Droplets className="w-4 h-4" />}
                     />
                     <KV
@@ -263,13 +237,7 @@ export default function TurboSitterPage() {
                 </div>
               </div>
               <div className="p-5 space-y-3">
-                {/* Placeholder signals – wire these to real values later */}
-                <BadgeLine
-                  label="Lid"
-                  value="Closed"
-                  icon={<DoorClosed className="w-4 h-4" />}
-                  tone="ok"
-                />
+                <BadgeLine label="Lid" value="Closed" tone="ok" />
                 <BadgeLine label="Rain Sensor" value="Dry" tone="ok" />
                 <BadgeLine label="Wind Lockout" value="Inactive" tone="ok" />
                 <BadgeLine label="Last Change" value="—" />
@@ -287,10 +255,9 @@ export default function TurboSitterPage() {
             </div>
           </div>
           <div className="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Placeholder camera tiles – replace src with actual mjpeg/thumbnail URLs */}
-            <CamTile name="North Yard" src="/placeholder.svg" />
-            <CamTile name="Pier / Mount" src="/placeholder.svg" />
-            <CamTile name="All-Sky" src="/placeholder.svg" />
+            <CamTile name="North Yard" />
+            <CamTile name="Pier / Mount" />
+            <CamTile name="All-Sky" />
           </div>
         </div>
       </div>
@@ -350,10 +317,9 @@ function BadgeLine({
   );
 }
 
-function CamTile({ name, src }: { name: string; src: string }) {
+function CamTile({ name }: { name: string }) {
   return (
     <div className="rounded-xl overflow-hidden border border-slate-200">
-      {/* Replace with <img> or <video> that points to actual camera stream/frames */}
       <div className="aspect-video bg-slate-100 flex items-center justify-center">
         <Camera className="w-8 h-8 text-slate-400" />
       </div>
@@ -362,59 +328,4 @@ function CamTile({ name, src }: { name: string; src: string }) {
       </div>
     </div>
   );
-}
-
-// ---------------------------------------------
-// API ROUTE collocated (for convenience in this snippet):
-// Create file: app/api/turbositter/weather/route.ts with the code below.
-// ---------------------------------------------
-
-export const dynamic = "force-dynamic"; // don't cache serverless response
-
-async function queryLatestWeather(): Promise<WeatherRow | null> {
-  // Import here to keep client bundle clean.
-  const { Client } = await import("pg");
-
-  // Prefer DATABASE_URL; otherwise fall back to discrete env vars.
-  const databaseUrl = process.env.DATABASE_URL;
-  const client = databaseUrl
-    ? new Client({ connectionString: databaseUrl })
-    : new Client({
-        host: process.env.PGHOST || "localhost",
-        port: process.env.PGPORT ? Number(process.env.PGPORT) : 5432,
-        user: process.env.PGUSER || "postgres",
-        password: process.env.PGPASSWORD,
-        database: process.env.PGDATABASE || "postgres",
-      });
-
-  await client.connect();
-  try {
-    const res = await client.query<WeatherRow>(
-      `SELECT clienttransactionid, servertransactionid, errornumber, errormessage,
-              avgperiod, cloudcover, dewpoint, humidity, pressure, rainrate,
-              skybrightness, skyquality, skytemp, starfwhm, temperature,
-              winddirection, windgust, windspeed,
-              (CASE WHEN column_name IS NULL THEN NULL ELSE created_at END) as created_at
-         FROM turbositter.mro_weather
-         ORDER BY COALESCE(created_at, to_timestamp(servertransactionid::text, 'YYYYMMDDHH24MISS') ) DESC NULLS LAST
-         LIMIT 1;`
-    );
-    return res.rows[0] ?? null;
-  } finally {
-    await client.end();
-  }
-}
-
-export async function GET() {
-  try {
-    const row = await queryLatestWeather();
-    return new Response(JSON.stringify({ ok: true, row }), {
-      headers: { "content-type": "application/json" },
-    });
-  } catch (err: any) {
-    return new Response(
-      JSON.stringify({ ok: false, error: String(err?.message || err) }),
-      { status: 500 }
-    );
-  }
 }
