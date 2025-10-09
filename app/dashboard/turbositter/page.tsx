@@ -5,18 +5,13 @@ import {
   Activity,
   Camera,
   Cloud,
-  Droplets,
-  Gauge,
   RefreshCw,
-  ThermometerSun,
   Video,
-  Wind,
   ChevronDown,
   ChevronRight,
   Expand,
   Shrink,
 } from "lucide-react";
-// Sidebar shell imports
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 
@@ -64,7 +59,6 @@ export default function TurboSitterPage() {
 
   useEffect(() => {
     setLoading(true);
-    // Placeholder demo hydration; replace with fetch to /api/turbositter/weather when ready.
     setTimeout(() => {
       setRow({
         temperature: 12.3,
@@ -167,7 +161,6 @@ export default function TurboSitterPage() {
         <main className="flex-1 p-4 md:p-6">
           <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
             <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-              {/* Header (page-specific controls) */}
               <header className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-slate-900">
                   TURBOSitter
@@ -192,25 +185,20 @@ export default function TurboSitterPage() {
                 </div>
               </header>
 
-              {/* Top row: Weather (taller) + Site Cam + Bot below */}
+              {/* Top row: Weather + Site Cam + Bot */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* WEATHER CARD (taller) */}
+                {/* Weather Card */}
                 <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden min-h-[28rem] p-5">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                      <Cloud className="w-5 h-5 text-blue-600" />
-                      Latest Weather Data
+                      <Cloud className="w-5 h-5 text-blue-600" /> Latest Weather
+                      Data
                     </h2>
                     <button
-                      onClick={() => {
-                        setLoading(true);
-                        // Replace with API fetch when ready
-                        setTimeout(() => setLoading(false), 400);
-                      }}
+                      onClick={() => setLoading(true)}
                       className="inline-flex items-center gap-2 border border-slate-200 px-3 py-1.5 rounded-xl text-sm hover:bg-slate-50"
                     >
-                      <RefreshCw className="w-4 h-4" />
-                      Refresh
+                      <RefreshCw className="w-4 h-4" /> Refresh
                     </button>
                   </div>
                   {loading ? (
@@ -261,15 +249,14 @@ export default function TurboSitterPage() {
                   )}
                 </div>
 
-                {/* RIGHT COLUMN: Site Cam (top half) + TURBOSitter Bot (bottom half) */}
-                <div className="flex flex-col gap-6">
-                  {/* SITE CAM CARD (half the weather height) */}
-                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5 h-[14rem] lg:h-[16rem]">
+                {/* Right Column — perfectly matched height */}
+                <div className="grid grid-rows-2 gap-6 h-[28rem]">
+                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5 min-h-0 flex flex-col">
                     <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2 mb-2">
-                      <Video className="w-5 h-5 text-green-600" />
-                      General Site Camera
+                      <Video className="w-5 h-5 text-green-600" /> General Site
+                      Camera
                     </h2>
-                    <div className="rounded-xl overflow-hidden border border-slate-200 h-full">
+                    <div className="rounded-xl overflow-hidden border border-slate-200 flex-1 min-h-0">
                       <video className="w-full h-full" controls muted>
                         <source
                           src="/feeds/site-general.m3u8"
@@ -279,14 +266,12 @@ export default function TurboSitterPage() {
                     </div>
                   </div>
 
-                  {/* TURBOSitter Bot Readout (same size as site cam) */}
-                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5 h-[14rem] lg:h-[16rem]">
+                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5 min-h-0 flex flex-col">
                     <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2 mb-2">
-                      <Activity className="w-5 h-5 text-indigo-600" />
+                      <Activity className="w-5 h-5 text-indigo-600" />{" "}
                       TURBOSitter Bot Readout
                     </h2>
-                    <div className="rounded-xl border border-slate-200 p-4 h-full overflow-auto">
-                      {/* Placeholder structured readout */}
+                    <div className="rounded-xl border border-slate-200 p-4 flex-1 min-h-0 overflow-auto">
                       <ul className="text-sm text-slate-700 space-y-2">
                         <li>
                           <span className="font-medium">Status:</span> Nominal
@@ -339,7 +324,6 @@ export default function TurboSitterPage() {
                       </span>
                     </button>
 
-                    {/* Summary badges */}
                     <div className="px-5 py-4 grid grid-cols-2 md:grid-cols-4 gap-4">
                       <Badge label="Lid" value={enc.details.lid} />
                       <Badge label="Rain" value={enc.details.rain} />
@@ -353,10 +337,8 @@ export default function TurboSitterPage() {
                       />
                     </div>
 
-                    {/* Expandable content */}
                     {open[enc.id] && (
                       <div className="px-5 pb-5 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Left: cams (stacked) */}
                         <div className="grid grid-cols-1 gap-4">
                           {enc.mounts.map((m) => (
                             <div
@@ -380,7 +362,6 @@ export default function TurboSitterPage() {
                             </div>
                           ))}
                         </div>
-                        {/* Right: monitor feed (about half-size height) */}
                         <div className="rounded-xl overflow-hidden border border-slate-200 h-48 flex flex-col">
                           <div className="bg-slate-100 flex items-center justify-center h-full">
                             <video className="w-full h-full" controls muted>
