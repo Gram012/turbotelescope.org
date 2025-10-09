@@ -1,39 +1,50 @@
 "use client";
 
 // /app/dashboard/turbositter/page.tsx
-// Client component for the TURBOSitter UI. Shows three blocks (Weather, Enclosure, Cameras)
-// and fetches latest weather data from /api/turbositter/weather.
-// NOTE: Do NOT export `metadata` from a client component.
+// Complete GUI for the TURBOSitter page.
+// - Weather card with Refresh (gracefully handles missing API)
+// - General Site Camera card (placeholder <video>)
+// - Three expandable Enclosure blocks (North, Central, South)
+//   Each enclosure shows summary badges when collapsed and reveals:
+//     • Monitor feed (placeholder <video>)
+//     • 3 mounts × 2 telescope cameras (names only, no images)
+//
+// You can wire real data later by replacing placeholder feeds and
+// populating details from your DB/API. This file intentionally has no
+// server-only exports (e.g., no `metadata`) so it compiles as a client page.
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  Activity,
   Camera,
   Cloud,
+  DoorClosed,
+  Droplets,
   Gauge,
   RefreshCw,
-  Wind,
   ThermometerSun,
-  Droplets,
-  Eye,
-  Activity,
   Video,
-  DoorClosed,
+  Wind,
+  ChevronDown,
+  ChevronRight,
+  Expand,
+  Shrink,
 } from "lucide-react";
 
-// --- Types shared with the API ---
+// ====== Types ======
 export type WeatherRow = {
   clienttransactionid: number | null;
   servertransactionid: number | null;
   errornumber: number | null;
   errormessage: string | null;
   avgperiod: number | null;
-  cloudcover: number | null; // fraction [0-1]
+  cloudcover: number | null; // 0-1 or %
   dewpoint: number | null; // °C
-  humidity: number | null; // % or [0-1] depending on source
+  humidity: number | null; // % or 0-1
   pressure: number | null; // hPa
   rainrate: number | null; // mm/hr
-  skybrightness: number | null; // mag/arcsec^2 or a.u.
+  skybrightness: number | null; // mag/arcsec² or a.u.
   skyquality: number | null; // a.u.
   skytemp: number | null; // °C
   starfwhm: number | null; // arcsec
@@ -41,21 +52,22 @@ export type WeatherRow = {
   winddirection: number | null; // deg
   windgust: number | null; // m/s
   windspeed: number | null; // m/s
-  created_at?: string | null; // ISO if present
+  created_at?: string | null; // ISO
 };
 
+// ====== Helpers ======
 function fmt(value: number | null | undefined, unit = "") {
   if (value === null || value === undefined) return "—";
-  const isInt = Number.isInteger(value);
-  const s = isInt ? String(value) : (value as number).toFixed(2);
+  const s = Number.isInteger(value)
+    ? String(value)
+    : (value as number).toFixed(2);
   return unit ? `${s} ${unit}` : s;
 }
 
 function pct(value: number | null | undefined) {
   if (value === null || value === undefined) return "—";
-  // Accept either 0-1 or 0-100 coming from DB
-  const v = value > 1 ? value / 100 : value;
-  return `${Math.max(0, Math.min(1, v)) * 100}%`.replace(".0%", "%");
+  const v = value > 1 ? value / 100 : value; // accept 0–1 or 0–100
+  return `${Math.round(Math.max(0, Math.min(1, v)) * 100)}%`;
 }
 
 async function fetchLatestWeather(): Promise<WeatherRow | null> {
@@ -65,32 +77,120 @@ async function fetchLatestWeather(): Promise<WeatherRow | null> {
     const data = (await res.json()) as { ok: boolean; row: WeatherRow | null };
     return data.row ?? null;
   } catch {
-    return null;
+    return null; // OK if API not present yet
   }
 }
 
+// ====== Page ======
 export default function TurboSitterPage() {
   const router = useRouter();
   const [row, setRow] = useState<WeatherRow | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingWeather, setLoadingWeather] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      setLoading(true);
+      setLoadingWeather(true);
       const r = await fetchLatestWeather();
-      setRow(r);
-      setLoading(false);
+      if (!cancelled) {
+        setRow(r);
+        setLoadingWeather(false);
+      }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  // Enclosure UI state
+  const [open, setOpen] = useState<{ [k: string]: boolean }>({
+    north: false,
+    central: false,
+    south: false,
+  });
+  const allOpen = open.north && open.central && open.south;
+
+  const enclosures = useMemo(
+    () => [
+      {
+        id: "north",
+        name: "North Enclosure",
+        details: {
+          lid: "Closed",
+          rain: "Dry",
+          windLockout: "Inactive",
+          temp: "—",
+        },
+        monitorSrc: "/feeds/north-monitor.m3u8",
+        mounts: [
+          { name: "Mount A", cams: ["A1 Telescope Cam", "A2 Telescope Cam"] },
+          { name: "Mount B", cams: ["B1 Telescope Cam", "B2 Telescope Cam"] },
+          { name: "Mount C", cams: ["C1 Telescope Cam", "C2 Telescope Cam"] },
+        ],
+      },
+      {
+        id: "central",
+        name: "Central Enclosure",
+        details: {
+          lid: "Closed",
+          rain: "Dry",
+          windLockout: "Inactive",
+          temp: "—",
+        },
+        monitorSrc: "/feeds/central-monitor.m3u8",
+        mounts: [
+          { name: "Mount A", cams: ["A1 Telescope Cam", "A2 Telescope Cam"] },
+          { name: "Mount B", cams: ["B1 Telescope Cam", "B2 Telescope Cam"] },
+          { name: "Mount C", cams: ["C1 Telescope Cam", "C2 Telescope Cam"] },
+        ],
+      },
+      {
+        id: "south",
+        name: "South Enclosure",
+        details: {
+          lid: "Closed",
+          rain: "Dry",
+          windLockout: "Inactive",
+          temp: "—",
+        },
+        monitorSrc: "/feeds/south-monitor.m3u8",
+        mounts: [
+          { name: "Mount A", cams: ["A1 Telescope Cam", "A2 Telescope Cam"] },
+          { name: "Mount B", cams: ["B1 Telescope Cam", "B2 Telescope Cam"] },
+          { name: "Mount C", cams: ["C1 Telescope Cam", "C2 Telescope Cam"] },
+        ],
+      },
+    ],
+    []
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+        {/* Header */}
         <header className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-slate-900">TURBOSitter</h1>
-          <div className="text-slate-500">Hardware Monitoring</div>
+          <div className="flex items-center gap-2 text-slate-500">
+            <button
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-sm hover:bg-slate-50"
+              onClick={() =>
+                setOpen({ north: true, central: true, south: true })
+              }
+            >
+              <Expand className="w-4 h-4" /> Expand all
+            </button>
+            <button
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-sm hover:bg-slate-50"
+              onClick={() =>
+                setOpen({ north: false, central: false, south: false })
+              }
+            >
+              <Shrink className="w-4 h-4" /> Collapse all
+            </button>
+          </div>
         </header>
 
+        {/* Grid: Weather (2 cols) + Quick Enclosure summary (1 col) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* WEATHER CARD */}
           <div className="lg:col-span-2">
@@ -104,10 +204,10 @@ export default function TurboSitterPage() {
                 </div>
                 <button
                   onClick={() => {
-                    setLoading(true);
+                    setLoadingWeather(true);
                     fetchLatestWeather().then((r) => {
                       setRow(r);
-                      setLoading(false);
+                      setLoadingWeather(false);
                     });
                   }}
                   className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-sm hover:bg-slate-50 active:scale-[0.99]"
@@ -117,7 +217,7 @@ export default function TurboSitterPage() {
               </div>
 
               <div className="p-5">
-                {loading ? (
+                {loadingWeather ? (
                   <div className="text-slate-500">Loading…</div>
                 ) : row ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -174,17 +274,17 @@ export default function TurboSitterPage() {
                     <KV
                       label="Sky Brightness"
                       value={fmt(row.skybrightness, "mag/arcsec²")}
-                      icon={<Eye className="w-4 h-4" />}
+                      icon={<Camera className="w-4 h-4" />}
                     />
                     <KV
                       label="Sky Quality"
                       value={fmt(row.skyquality)}
-                      icon={<Eye className="w-4 h-4" />}
+                      icon={<Camera className="w-4 h-4" />}
                     />
                     <KV
                       label="Star FWHM"
                       value={fmt(row.starfwhm, "arcsec")}
-                      icon={<Eye className="w-4 h-4" />}
+                      icon={<Camera className="w-4 h-4" />}
                     />
                     <KV
                       label="Avg Period"
@@ -203,7 +303,9 @@ export default function TurboSitterPage() {
                     />
                   </div>
                 ) : (
-                  <div className="text-slate-500">No data found.</div>
+                  <div className="text-slate-500">
+                    No data found (API not wired yet).
+                  </div>
                 )}
 
                 {row?.errormessage ? (
@@ -218,53 +320,90 @@ export default function TurboSitterPage() {
                       Last updated: {new Date(row.created_at).toLocaleString()}
                     </span>
                   ) : (
-                    <span>Ordering by most recent transaction id.</span>
+                    <span>Showing placeholders until API is connected.</span>
                   )}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ENCLOSURE CARD */}
+          {/* Quick summary card (optional space filler) */}
           <div className="lg:col-span-1">
             <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden h-full">
               <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <DoorClosed className="w-5 h-5 text-purple-600" />
                   <h2 className="text-lg font-semibold text-slate-900">
-                    Enclosure
+                    Enclosures
                   </h2>
                 </div>
               </div>
               <div className="p-5 space-y-3">
-                <BadgeLine label="Lid" value="Closed" tone="ok" />
-                <BadgeLine label="Rain Sensor" value="Dry" tone="ok" />
-                <BadgeLine label="Wind Lockout" value="Inactive" tone="ok" />
-                <BadgeLine label="Last Change" value="—" />
+                <BadgeLine
+                  label="North"
+                  value={open.north ? "Expanded" : "Collapsed"}
+                />
+                <BadgeLine
+                  label="Central"
+                  value={open.central ? "Expanded" : "Collapsed"}
+                />
+                <BadgeLine
+                  label="South"
+                  value={open.south ? "Expanded" : "Collapsed"}
+                />
               </div>
             </div>
           </div>
         </div>
 
-        {/* CAMERAS GRID */}
+        {/* General Site Camera */}
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
             <div className="flex items-center gap-2">
               <Video className="w-5 h-5 text-green-600" />
-              <h2 className="text-lg font-semibold text-slate-900">Cameras</h2>
+              <h2 className="text-lg font-semibold text-slate-900">
+                General Site Camera
+              </h2>
             </div>
           </div>
-          <div className="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <CamTile name="North Yard" />
-            <CamTile name="Pier / Mount" />
-            <CamTile name="All-Sky" />
+          <div className="p-5">
+            <div className="rounded-xl overflow-hidden border border-slate-200">
+              <div className="aspect-video bg-slate-100 flex items-center justify-center">
+                <video className="w-full h-full" controls muted>
+                  <source
+                    src="/feeds/site-general.m3u8"
+                    type="application/vnd.apple.mpegurl"
+                  />
+                </video>
+              </div>
+              <div className="px-4 py-2 border-t border-slate-100 text-sm text-slate-700">
+                Whole Site Overview
+              </div>
+            </div>
           </div>
+        </div>
+
+        {/* Enclosure Blocks */}
+        <div className="space-y-6">
+          {enclosures.map((enc) => (
+            <EnclosureBlock
+              key={enc.id}
+              id={enc.id}
+              name={enc.name}
+              details={enc.details}
+              monitorSrc={enc.monitorSrc}
+              mounts={enc.mounts}
+              open={open[enc.id as keyof typeof open]}
+              setOpen={(v) => setOpen((s) => ({ ...s, [enc.id]: v }))}
+            />
+          ))}
         </div>
       </div>
     </div>
   );
 }
 
+// ====== Components ======
 function KV({
   label,
   value,
@@ -317,15 +456,110 @@ function BadgeLine({
   );
 }
 
-function CamTile({ name }: { name: string }) {
+function EnclosureBlock({
+  id,
+  name,
+  details,
+  monitorSrc,
+  mounts,
+  open,
+  setOpen,
+}: {
+  id: string;
+  name: string;
+  details: { lid: string; rain: string; windLockout: string; temp?: string };
+  monitorSrc: string;
+  mounts: { name: string; cams: string[] }[];
+  open: boolean;
+  setOpen: (v: boolean) => void;
+}) {
   return (
-    <div className="rounded-xl overflow-hidden border border-slate-200">
-      <div className="aspect-video bg-slate-100 flex items-center justify-center">
-        <Camera className="w-8 h-8 text-slate-400" />
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-5 py-4 border-b border-slate-100 hover:bg-slate-50"
+        aria-expanded={open}
+        aria-controls={`${id}-content`}
+      >
+        <div className="flex items-center gap-2">
+          {open ? (
+            <ChevronDown className="w-5 h-5 text-indigo-600" />
+          ) : (
+            <ChevronRight className="w-5 h-5 text-indigo-600" />
+          )}
+          <h2 className="text-lg font-semibold text-slate-900">{name}</h2>
+        </div>
+        <span className="text-sm text-slate-500">
+          {open ? "Hide" : "Show"} cameras
+        </span>
+      </button>
+
+      {/* Summary badges */}
+      <div className="px-5 py-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <BadgeLine
+          label="Lid"
+          value={details.lid}
+          tone={details.lid === "Closed" ? "ok" : "warn"}
+        />
+        <BadgeLine
+          label="Rain"
+          value={details.rain}
+          tone={details.rain === "Dry" ? "ok" : "warn"}
+        />
+        <BadgeLine
+          label="Wind Lockout"
+          value={details.windLockout}
+          tone={details.windLockout === "Inactive" ? "ok" : "warn"}
+        />
+        <BadgeLine label="Internal Temp" value={details.temp || "—"} />
       </div>
-      <div className="px-4 py-2 border-t border-slate-100 text-sm text-slate-700">
-        {name}
-      </div>
+
+      {/* Expandable content */}
+      {open && (
+        <div id={`${id}-content`} className="px-5 pb-5">
+          {/* Monitor Feed */}
+          <div className="mb-4">
+            <div className="text-sm font-medium text-slate-700 mb-2">
+              Monitor Camera
+            </div>
+            <div className="rounded-xl overflow-hidden border border-slate-200">
+              <div className="aspect-video bg-slate-100 flex items-center justify-center">
+                <video className="w-full h-full" controls muted>
+                  <source
+                    src={monitorSrc}
+                    type="application/vnd.apple.mpegurl"
+                  />
+                </video>
+              </div>
+              <div className="px-4 py-2 border-t border-slate-100 text-sm text-slate-700">
+                {name} Monitor
+              </div>
+            </div>
+          </div>
+
+          {/* Mounts & Cameras */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {mounts.map((m) => (
+              <div key={m.name} className="rounded-xl border border-slate-200">
+                <div className="px-4 py-2 border-b border-slate-100 font-medium text-slate-800">
+                  {m.name}
+                </div>
+                <ul className="divide-y divide-slate-100">
+                  {m.cams.map((c) => (
+                    <li
+                      key={c}
+                      className="px-4 py-2 text-sm text-slate-700 flex items-center gap-2"
+                    >
+                      <Camera className="w-4 h-4 text-slate-400" />
+                      {c}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
