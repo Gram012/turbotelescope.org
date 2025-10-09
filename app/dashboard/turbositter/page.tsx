@@ -1,25 +1,10 @@
 "use client";
 
-// /app/dashboard/turbositter/page.tsx
-// Complete GUI for the TURBOSitter page.
-// - Weather card with Refresh (gracefully handles missing API)
-// - General Site Camera card (placeholder <video>)
-// - Three expandable Enclosure blocks (North, Central, South)
-//   Each enclosure shows summary badges when collapsed and reveals:
-//     • Monitor feed (placeholder <video>)
-//     • 3 mounts × 2 telescope cameras (names only, no images)
-//
-// You can wire real data later by replacing placeholder feeds and
-// populating details from your DB/API. This file intentionally has no
-// server-only exports (e.g., no `metadata`) so it compiles as a client page.
-
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Activity,
   Camera,
   Cloud,
-  DoorClosed,
   Droplets,
   Gauge,
   RefreshCw,
@@ -83,9 +68,13 @@ async function fetchLatestWeather(): Promise<WeatherRow | null> {
 
 // ====== Page ======
 export default function TurboSitterPage() {
-  const router = useRouter();
   const [row, setRow] = useState<WeatherRow | null>(null);
   const [loadingWeather, setLoadingWeather] = useState(true);
+  const [open, setOpen] = useState<{ [k: string]: boolean }>({
+    north: false,
+    central: false,
+    south: false,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -102,14 +91,6 @@ export default function TurboSitterPage() {
     };
   }, []);
 
-  // Enclosure UI state
-  const [open, setOpen] = useState<{ [k: string]: boolean }>({
-    north: false,
-    central: false,
-    south: false,
-  });
-  const allOpen = open.north && open.central && open.south;
-
   const enclosures = useMemo(
     () => [
       {
@@ -123,9 +104,14 @@ export default function TurboSitterPage() {
         },
         monitorSrc: "/feeds/north-monitor.m3u8",
         mounts: [
-          { name: "Mount A", cams: ["A1 Telescope Cam", "A2 Telescope Cam"] },
-          { name: "Mount B", cams: ["B1 Telescope Cam", "B2 Telescope Cam"] },
-          { name: "Mount C", cams: ["C1 Telescope Cam", "C2 Telescope Cam"] },
+          {
+            name: "North Mount",
+            cams: ["N1 Telescope Cam", "N2 Telescope Cam"],
+          },
+          {
+            name: "South Mount",
+            cams: ["S1 Telescope Cam", "S2 Telescope Cam"],
+          },
         ],
       },
       {
@@ -139,9 +125,14 @@ export default function TurboSitterPage() {
         },
         monitorSrc: "/feeds/central-monitor.m3u8",
         mounts: [
-          { name: "Mount A", cams: ["A1 Telescope Cam", "A2 Telescope Cam"] },
-          { name: "Mount B", cams: ["B1 Telescope Cam", "B2 Telescope Cam"] },
-          { name: "Mount C", cams: ["C1 Telescope Cam", "C2 Telescope Cam"] },
+          {
+            name: "North Mount",
+            cams: ["N1 Telescope Cam", "N2 Telescope Cam"],
+          },
+          {
+            name: "South Mount",
+            cams: ["S1 Telescope Cam", "S2 Telescope Cam"],
+          },
         ],
       },
       {
@@ -155,9 +146,14 @@ export default function TurboSitterPage() {
         },
         monitorSrc: "/feeds/south-monitor.m3u8",
         mounts: [
-          { name: "Mount A", cams: ["A1 Telescope Cam", "A2 Telescope Cam"] },
-          { name: "Mount B", cams: ["B1 Telescope Cam", "B2 Telescope Cam"] },
-          { name: "Mount C", cams: ["C1 Telescope Cam", "C2 Telescope Cam"] },
+          {
+            name: "North Mount",
+            cams: ["N1 Telescope Cam", "N2 Telescope Cam"],
+          },
+          {
+            name: "South Mount",
+            cams: ["S1 Telescope Cam", "S2 Telescope Cam"],
+          },
         ],
       },
     ],
@@ -190,194 +186,189 @@ export default function TurboSitterPage() {
           </div>
         </header>
 
-        {/* Grid: Weather (2 cols) + Quick Enclosure summary (1 col) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* WEATHER CARD */}
-          <div className="lg:col-span-2">
+        {/* Top row: Weather (left, 2x tall) + right column with Site Cam (1/2 height) and TURBOSitter Bot (1/2 height) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* WEATHER CARD (taller) */}
+          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden min-h-[28rem] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Cloud className="w-5 h-5 text-blue-600" />
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Latest Weather Data
+                </h2>
+              </div>
+              <button
+                onClick={() => {
+                  setLoadingWeather(true);
+                  fetchLatestWeather().then((r) => {
+                    setRow(r);
+                    setLoadingWeather(false);
+                  });
+                }}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-sm hover:bg-slate-50 active:scale-[0.99]"
+              >
+                <RefreshCw className="w-4 h-4" /> Refresh
+              </button>
+            </div>
+
+            <div className="p-5 grow">
+              {loadingWeather ? (
+                <div className="text-slate-500">Loading…</div>
+              ) : row ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <KV
+                    label="Air Temp"
+                    value={fmt(row.temperature, "°C")}
+                    icon={<ThermometerSun className="w-4 h-4" />}
+                  />
+                  <KV
+                    label="Dew Point"
+                    value={fmt(row.dewpoint, "°C")}
+                    icon={<Droplets className="w-4 h-4" />}
+                  />
+                  <KV
+                    label="Humidity"
+                    value={pct(row.humidity)}
+                    icon={<Droplets className="w-4 h-4" />}
+                  />
+                  <KV
+                    label="Pressure"
+                    value={fmt(row.pressure, "hPa")}
+                    icon={<Gauge className="w-4 h-4" />}
+                  />
+                  <KV
+                    label="Wind Speed"
+                    value={fmt(row.windspeed, "m/s")}
+                    icon={<Wind className="w-4 h-4" />}
+                  />
+                  <KV
+                    label="Wind Gust"
+                    value={fmt(row.windgust, "m/s")}
+                    icon={<Wind className="w-4 h-4" />}
+                  />
+                  <KV
+                    label="Wind Dir"
+                    value={fmt(row.winddirection, "°")}
+                    icon={<Activity className="w-4 h-4" />}
+                  />
+                  <KV
+                    label="Cloud Cover"
+                    value={pct(row.cloudcover)}
+                    icon={<Cloud className="w-4 h-4" />}
+                  />
+                  <KV
+                    label="Rain Rate"
+                    value={fmt(row.rainrate, "mm/hr")}
+                    icon={<Cloud className="w-4 h-4" />}
+                  />
+                  <KV
+                    label="Sky Temp"
+                    value={fmt(row.skytemp, "°C")}
+                    icon={<ThermometerSun className="w-4 h-4" />}
+                  />
+                  <KV
+                    label="Sky Brightness"
+                    value={fmt(row.skybrightness, "mag/arcsec²")}
+                    icon={<Camera className="w-4 h-4" />}
+                  />
+                  <KV
+                    label="Sky Quality"
+                    value={fmt(row.skyquality)}
+                    icon={<Camera className="w-4 h-4" />}
+                  />
+                  <KV
+                    label="Star FWHM"
+                    value={fmt(row.starfwhm, "arcsec")}
+                    icon={<Camera className="w-4 h-4" />}
+                  />
+                  <KV
+                    label="Avg Period"
+                    value={fmt(row.avgperiod, "s")}
+                    icon={<Gauge className="w-4 h-4" />}
+                  />
+                  <KV
+                    label="Server Txn ID"
+                    value={fmt(row.servertransactionid)}
+                    icon={<Gauge className="w-4 h-4" />}
+                  />
+                  <KV
+                    label="Client Txn ID"
+                    value={fmt(row.clienttransactionid)}
+                    icon={<Gauge className="w-4 h-4" />}
+                  />
+                </div>
+              ) : (
+                <div className="text-slate-500">
+                  No data found (API not wired yet).
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: Site Cam (top half) + TURBOSitter Bot (bottom half) */}
+          <div className="flex flex-col gap-6">
+            {/* SITE CAM CARD (half the weather height) */}
             <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                 <div className="flex items-center gap-2">
-                  <Cloud className="w-5 h-5 text-blue-600" />
+                  <Video className="w-5 h-5 text-green-600" />
                   <h2 className="text-lg font-semibold text-slate-900">
-                    Latest Weather Data
+                    General Site Camera
                   </h2>
                 </div>
-                <button
-                  onClick={() => {
-                    setLoadingWeather(true);
-                    fetchLatestWeather().then((r) => {
-                      setRow(r);
-                      setLoadingWeather(false);
-                    });
-                  }}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-sm hover:bg-slate-50 active:scale-[0.99]"
-                >
-                  <RefreshCw className="w-4 h-4" /> Refresh
-                </button>
               </div>
-
               <div className="p-5">
-                {loadingWeather ? (
-                  <div className="text-slate-500">Loading…</div>
-                ) : row ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                    <KV
-                      label="Air Temp"
-                      value={fmt(row.temperature, "°C")}
-                      icon={<ThermometerSun className="w-4 h-4" />}
-                    />
-                    <KV
-                      label="Dew Point"
-                      value={fmt(row.dewpoint, "°C")}
-                      icon={<Droplets className="w-4 h-4" />}
-                    />
-                    <KV
-                      label="Humidity"
-                      value={pct(row.humidity)}
-                      icon={<Droplets className="w-4 h-4" />}
-                    />
-                    <KV
-                      label="Pressure"
-                      value={fmt(row.pressure, "hPa")}
-                      icon={<Gauge className="w-4 h-4" />}
-                    />
-                    <KV
-                      label="Wind Speed"
-                      value={fmt(row.windspeed, "m/s")}
-                      icon={<Wind className="w-4 h-4" />}
-                    />
-                    <KV
-                      label="Wind Gust"
-                      value={fmt(row.windgust, "m/s")}
-                      icon={<Wind className="w-4 h-4" />}
-                    />
-                    <KV
-                      label="Wind Dir"
-                      value={fmt(row.winddirection, "°")}
-                      icon={<Activity className="w-4 h-4" />}
-                    />
-                    <KV
-                      label="Cloud Cover"
-                      value={pct(row.cloudcover)}
-                      icon={<Cloud className="w-4 h-4" />}
-                    />
-                    <KV
-                      label="Rain Rate"
-                      value={fmt(row.rainrate, "mm/hr")}
-                      icon={<Cloud className="w-4 h-4" />}
-                    />
-                    <KV
-                      label="Sky Temp"
-                      value={fmt(row.skytemp, "°C")}
-                      icon={<ThermometerSun className="w-4 h-4" />}
-                    />
-                    <KV
-                      label="Sky Brightness"
-                      value={fmt(row.skybrightness, "mag/arcsec²")}
-                      icon={<Camera className="w-4 h-4" />}
-                    />
-                    <KV
-                      label="Sky Quality"
-                      value={fmt(row.skyquality)}
-                      icon={<Camera className="w-4 h-4" />}
-                    />
-                    <KV
-                      label="Star FWHM"
-                      value={fmt(row.starfwhm, "arcsec")}
-                      icon={<Camera className="w-4 h-4" />}
-                    />
-                    <KV
-                      label="Avg Period"
-                      value={fmt(row.avgperiod, "s")}
-                      icon={<Gauge className="w-4 h-4" />}
-                    />
-                    <KV
-                      label="Server Txn ID"
-                      value={fmt(row.servertransactionid)}
-                      icon={<Gauge className="w-4 h-4" />}
-                    />
-                    <KV
-                      label="Client Txn ID"
-                      value={fmt(row.clienttransactionid)}
-                      icon={<Gauge className="w-4 h-4" />}
-                    />
+                <div className="rounded-xl overflow-hidden border border-slate-200">
+                  <div className="bg-slate-100 flex items-center justify-center h-56">
+                    {/* half height */}
+                    <video className="w-full h-full" controls muted>
+                      <source
+                        src="/feeds/site-general.m3u8"
+                        type="application/vnd.apple.mpegurl"
+                      />
+                    </video>
                   </div>
-                ) : (
-                  <div className="text-slate-500">
-                    No data found (API not wired yet).
+                  <div className="px-4 py-2 border-t border-slate-100 text-sm text-slate-700">
+                    Whole Site Overview
                   </div>
-                )}
-
-                {row?.errormessage ? (
-                  <div className="mt-4 text-sm text-amber-600">
-                    Error Message: {row.errormessage}
-                  </div>
-                ) : null}
-
-                <div className="mt-4 text-xs text-slate-500">
-                  {row?.created_at ? (
-                    <span>
-                      Last updated: {new Date(row.created_at).toLocaleString()}
-                    </span>
-                  ) : (
-                    <span>Showing placeholders until API is connected.</span>
-                  )}
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Quick summary card (optional space filler) */}
-          <div className="lg:col-span-1">
-            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden h-full">
+            {/* TURBOSitter Bot Readout (same size as site cam) */}
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                 <div className="flex items-center gap-2">
-                  <DoorClosed className="w-5 h-5 text-purple-600" />
+                  <Activity className="w-5 h-5 text-indigo-600" />
                   <h2 className="text-lg font-semibold text-slate-900">
-                    Enclosures
+                    TURBOSitter Bot Readout
                   </h2>
                 </div>
               </div>
-              <div className="p-5 space-y-3">
-                <BadgeLine
-                  label="North"
-                  value={open.north ? "Expanded" : "Collapsed"}
-                />
-                <BadgeLine
-                  label="Central"
-                  value={open.central ? "Expanded" : "Collapsed"}
-                />
-                <BadgeLine
-                  label="South"
-                  value={open.south ? "Expanded" : "Collapsed"}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* General Site Camera */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <Video className="w-5 h-5 text-green-600" />
-              <h2 className="text-lg font-semibold text-slate-900">
-                General Site Camera
-              </h2>
-            </div>
-          </div>
-          <div className="p-5">
-            <div className="rounded-xl overflow-hidden border border-slate-200">
-              <div className="aspect-video bg-slate-100 flex items-center justify-center">
-                <video className="w-full h-full" controls muted>
-                  <source
-                    src="/feeds/site-general.m3u8"
-                    type="application/vnd.apple.mpegurl"
-                  />
-                </video>
-              </div>
-              <div className="px-4 py-2 border-t border-slate-100 text-sm text-slate-700">
-                Whole Site Overview
+              <div className="p-5">
+                <div className="rounded-xl border border-slate-200 p-4 h-56 overflow-auto">
+                  {/* same height as site cam */}
+                  {/* Placeholder structured readout */}
+                  <ul className="text-sm text-slate-700 space-y-2">
+                    <li>
+                      <span className="font-medium">Status:</span> Nominal
+                    </li>
+                    <li>
+                      <span className="font-medium">Last Poll:</span> —
+                    </li>
+                    <li>
+                      <span className="font-medium">Active Alerts:</span> None
+                    </li>
+                    <li>
+                      <span className="font-medium">Recent Events:</span>
+                      <ul className="ml-4 list-disc">
+                        <li>—</li>
+                        <li>—</li>
+                        <li>—</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
@@ -516,14 +507,15 @@ function EnclosureBlock({
 
       {/* Expandable content */}
       {open && (
-        <div id={`${id}-content`} className="px-5 pb-5">
-          {/* Monitor Feed */}
-          <div className="mb-4">
+        <div id={`${id}-content`} className="px-5 pb-5 space-y-5">
+          {/* Monitor Feed (about half size) */}
+          <div>
             <div className="text-sm font-medium text-slate-700 mb-2">
               Monitor Camera
             </div>
             <div className="rounded-xl overflow-hidden border border-slate-200">
-              <div className="aspect-video bg-slate-100 flex items-center justify-center">
+              <div className="bg-slate-100 flex items-center justify-center h-40">
+                {/* about half previous size */}
                 <video className="w-full h-full" controls muted>
                   <source
                     src={monitorSrc}
@@ -537,26 +529,34 @@ function EnclosureBlock({
             </div>
           </div>
 
-          {/* Mounts & Cameras */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {mounts.map((m) => (
-              <div key={m.name} className="rounded-xl border border-slate-200">
-                <div className="px-4 py-2 border-b border-slate-100 font-medium text-slate-800">
-                  {m.name}
+          {/* Mounts & Cameras — at the bottom & compact/half-size look */}
+          <div>
+            <div className="text-sm font-medium text-slate-700 mb-2">
+              Telescope Cameras
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {mounts.map((m) => (
+                <div
+                  key={m.name}
+                  className="rounded-xl border border-slate-200"
+                >
+                  <div className="px-3 py-1.5 border-b border-slate-100 text-sm font-medium text-slate-800">
+                    {m.name}
+                  </div>
+                  <ul className="divide-y divide-slate-100">
+                    {m.cams.map((c) => (
+                      <li
+                        key={c}
+                        className="px-3 py-1.5 text-xs text-slate-700 flex items-center gap-2"
+                      >
+                        <Camera className="w-3.5 h-3.5 text-slate-400" />
+                        {c}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="divide-y divide-slate-100">
-                  {m.cams.map((c) => (
-                    <li
-                      key={c}
-                      className="px-4 py-2 text-sm text-slate-700 flex items-center gap-2"
-                    >
-                      <Camera className="w-4 h-4 text-slate-400" />
-                      {c}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
