@@ -264,7 +264,7 @@ export default function TurboSitterPage() {
                 {/* RIGHT COLUMN: Site Cam (top half) + TURBOSitter Bot (bottom half) */}
                 <div className="flex flex-col gap-6">
                   {/* SITE CAM CARD (half the weather height) */}
-                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5 h-56">
+                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5 h-[14rem] lg:h-[16rem]">
                     <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2 mb-2">
                       <Video className="w-5 h-5 text-green-600" />
                       General Site Camera
@@ -280,7 +280,7 @@ export default function TurboSitterPage() {
                   </div>
 
                   {/* TURBOSitter Bot Readout (same size as site cam) */}
-                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5 h-56">
+                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5 h-[14rem] lg:h-[16rem]">
                     <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2 mb-2">
                       <Activity className="w-5 h-5 text-indigo-600" />
                       TURBOSitter Bot Readout
