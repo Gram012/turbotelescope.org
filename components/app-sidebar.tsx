@@ -30,7 +30,7 @@ import {
   ChevronUp,
   LogOut,
   LayoutDashboard,
-  ScanEye
+  ScanEye,
 } from "lucide-react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
@@ -60,14 +60,13 @@ const navigationItems: NavItem[] = [
   },
   {
     title: "SkyPortal",
-    url: "http://wicapi.spa.umn.edu:9000",
+    url: "http://wicapi.spa.umn.edu",
     icon: Shell,
     external: true,
   },
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Turbositter", url: "/dashboard/turbositter", icon: ScanEye  },
-
- ];
+  { title: "Turbositter", url: "/dashboard/turbositter", icon: ScanEye },
+];
 
 const settingsItems: NavItem[] = [
   { title: "General Settings", url: "/dashboard/settings", icon: Settings },
