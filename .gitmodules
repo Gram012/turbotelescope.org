@@ -1,0 +1,3 @@
+[submodule "turbotelescope.net"]
+	path = turbotelescope.net
+	url = https://github.com/TurboTelescope/turbotelescope.net
