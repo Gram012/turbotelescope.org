@@ -237,14 +237,6 @@ export default function TurboSitterPage() {
                         value={fmt(row?.starfwhm, "arcsec")}
                       />
                       <KV label="Avg Period" value={fmt(row?.avgperiod, "s")} />
-                      <KV
-                        label="Server Txn ID"
-                        value={fmt(row?.servertransactionid)}
-                      />
-                      <KV
-                        label="Client Txn ID"
-                        value={fmt(row?.clienttransactionid)}
-                      />
                     </div>
                   )}
                 </div>
