@@ -41,7 +41,7 @@ type NavItem = { title: string; url: string; icon: any; external?: boolean };
 const navigationItems: NavItem[] = [
   {
     title: "Image Health Website",
-    url: "http://popcorn.spa.umn.edu:5001/IHW",
+    url: "https://ihw.turbotelescope.net",
     icon: BarChart3,
     external: true,
   },
