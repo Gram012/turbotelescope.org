@@ -252,13 +252,19 @@ export function DashboardContent({
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle>Recent Pipeline Runs</CardTitle>
+                        <CardTitle>Recent Images Processed</CardTitle>
                         <CardDescription>
                           Latest pipeline runs with database entries
                         </CardDescription>
                       </div>
                       <Button variant="outline" size="sm">
-                        View All
+                        <a
+                          href={`https://ihw.turbotelescope.org`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          View All
+                        </a>
                       </Button>
                     </div>
                   </CardHeader>
