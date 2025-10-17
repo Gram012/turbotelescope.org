@@ -1,3 +1,4 @@
+// components/admin-dashboard.tsx
 "use client";
 
 import { useState } from "react";
@@ -5,12 +6,34 @@ import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from "lucide-react";
 import { DashboardContent } from "@/components/dashboard-content";
 
+type Row = {
+  image_id: number;
+  file_path: string;
+  status: string;
+  processing_time: number | null;
+  pipeline_step: string;
+  step_message: string | null;
+  time_of_run: string;
+};
+
+type KPI = {
+  success: number;
+  failure: number;
+  total: number;
+};
+
 /**
  * AdminDashboard toggles between normal admin view and "View as default user".
  * - In user view: WAZ Alerts hidden, blue ring overlay, Exit control.
  * - Sidebar remains visible in BOTH modes (rendered by DashboardContent).
  */
-export function AdminDashboard() {
+export function AdminDashboard({
+  tableData,
+  successOrFail,
+}: {
+  tableData: Row[];
+  successOrFail: KPI;
+}) {
   const [userView, setUserView] = useState(false);
 
   const impersonationControls = !userView ? (
@@ -33,6 +56,8 @@ export function AdminDashboard() {
         showWazAlerts={!userView}
         impersonationControls={impersonationControls}
         disableAuthGuard
+        tableData={tableData}
+        successOrFail={successOrFail}
       />
 
       {/* Blue ring + label when impersonating (covers entire viewport incl. sidebar) */}

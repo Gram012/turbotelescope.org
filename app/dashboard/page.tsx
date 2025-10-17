@@ -19,6 +19,7 @@ export default async function DashboardPage() {
     <DashboardContent
       owner="patkel"
       repo="turbo_telescope"
+      showWazAlerts={false}
       tableData={tableData}
       successOrFail={successOrFail}
     />
