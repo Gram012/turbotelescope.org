@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import type { ReactNode } from "react";
+import { getSuccessOrFail, getRecentImageEvents } from "@/lib/database";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -53,7 +54,7 @@ function MaybeGuard({
   return disabled ? <>{children}</> : <AuthGuard>{children}</AuthGuard>;
 }
 
-export function DashboardContent({
+export async function DashboardContent({
   owner = "patkel",
   repo = "turbo_telescope",
   showWazAlerts = true,
@@ -62,33 +63,45 @@ export function DashboardContent({
 }: DashboardContentProps) {
   const { data: session } = useSession();
   const user = session?.user;
+  const successOrFail = await getSuccessOrFail();
+  const recent = await getRecentImageEvents();
 
   const stats = [
     {
-      title: "Succes Rate",
-      value: "95%",
-      change: "+12.5% from last week",
+      title: "Success Rate",
+      value: `${((successOrFail.success / successOrFail.total) * 100).toFixed(
+        1
+      )}%`,
+      change: `${(successOrFail.delta.successRate * 100).toFixed(
+        1
+      )}% from last week`,
       icon: Check,
       color: "text-green-600",
     },
     {
       title: "Failure Rate",
-      value: "5%",
-      change: "-12.5% from last week",
+      value: `${((successOrFail.failure / successOrFail.total) * 100).toFixed(
+        1
+      )}%`,
+      change: `${(-successOrFail.delta.successRate * 100).toFixed(
+        1
+      )}% from last week`,
       icon: XIcon,
       color: "text-red-600",
     },
     {
       title: "Most Problematic Step",
-      value: "Assign Ref",
-      change: "10 failures",
+      value: successOrFail.most_problematic_step?.pipeline_step || "—",
+      change: `${successOrFail.most_problematic_step?.failures || 0} failures`,
       icon: BarChart,
       color: "text-purple-600",
     },
     {
       title: "Images Processed",
-      value: "312",
-      change: "",
+      value: `${successOrFail.total}`,
+      change: `${successOrFail.delta.total >= 0 ? "+" : ""}${
+        successOrFail.delta.total
+      } from last week`,
       icon: Telescope,
       color: "text-blue-600",
     },
@@ -195,7 +208,7 @@ export function DashboardContent({
               </p>
             </div>
 
-            {/* KPIs */}
+            {/* STATS */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {stats.map((stat, index) => (
                 <Card key={index} className="border-slate-200">
@@ -243,41 +256,23 @@ export function DashboardContent({
                       </Button>
                     </div>
                   </CardHeader>
+
                   <CardContent>
                     <div className="space-y-4">
-                      {[
-                        {
-                          action: "xxx",
-                          user: "LW runtime",
-                          time: "6/4 - 21:45",
-                        },
-                        {
-                          action: "xxx",
-                          user: "TurboDocker",
-                          time: "6/4 - 12:32",
-                        },
-                        {
-                          action: "xxx",
-                          user: "LW runtime",
-                          time: "6/2 - 15:17",
-                        },
-                        {
-                          action: "xxx",
-                          user: "TurboDocker",
-                          time: "5/30 - 9:51",
-                        },
-                      ].map((activity, index) => (
+                      {/* ✅ REPLACE the hardcoded activity array with this */}
+                      {recent.image_names.map((name, index) => (
                         <div
-                          key={index}
+                          key={recent.image_ids[index]}
                           className="flex items-center space-x-4 p-3 rounded-lg hover:bg-slate-50"
                         >
                           <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-slate-900">
-                              {activity.action}
+                              {name}
                             </p>
                             <p className="text-xs text-slate-500">
-                              {activity.user} • {activity.time}
+                              {recent.pipeline_steps[index]} •{" "}
+                              {recent.times[index]}
                             </p>
                           </div>
                         </div>

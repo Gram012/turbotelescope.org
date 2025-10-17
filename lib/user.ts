@@ -1,5 +1,5 @@
 // lib/user.ts
-import { sql } from "@/lib/db";
+import { sql } from "@vercel/postgres";
 
 export type DBUser = {
   id: number;
