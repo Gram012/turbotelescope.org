@@ -259,7 +259,7 @@ export function DashboardContent({
                       </div>
                       <Button variant="outline" size="sm">
                         <a
-                          href={`https://ihw.turbotelescope.org`}
+                          href={`https://turbotelescope.org/dashboard/image-status`}
                           target="_blank"
                           rel="noopener noreferrer"
                         >
