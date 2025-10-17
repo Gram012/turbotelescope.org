@@ -21,55 +21,80 @@ export async function getSuccessOrFail(): Promise<{
     delta: { total: number; successRate: number };
     most_problematic_step: { pipeline_step: string; failures: number } | null;
 }> {
+    // Success is defined by pipeline_step = 'save' on the LATEST row per image_id.
+    // We compute against the last 7 days, and delta vs the previous 7-day window.
+
     const text = `
-    WITH
-    bounds AS (
+    WITH bounds AS (
       SELECT
-        now() - interval '7 days' AS start_curr,
-        now()                   AS end_curr,
+        now() - interval '7 days'  AS start_curr,
+        now()                      AS end_curr,
         now() - interval '14 days' AS start_prev,
         now() - interval '7 days'  AS end_prev
     ),
-    curr AS (
-      SELECT *
-      FROM panstarrs_pipeline.image_status, bounds
-      WHERE time_of_run >= (SELECT start_curr FROM bounds)
-        AND time_of_run <  (SELECT end_curr   FROM bounds)
+
+    -- Current window: keep only latest row per image_id
+    curr_raw AS (
+      SELECT s.*
+      FROM panstarrs_pipeline.image_status s
+      WHERE s.time_of_run >= (SELECT start_curr FROM bounds)
+        AND s.time_of_run <  (SELECT end_curr   FROM bounds)
     ),
-    prev AS (
-      SELECT *
-      FROM panstarrs_pipeline.image_status, bounds
-      WHERE time_of_run >= (SELECT start_prev FROM bounds)
-        AND time_of_run <  (SELECT end_prev   FROM bounds)
+    curr_latest AS (
+      SELECT DISTINCT ON (image_id)
+             image_id, pipeline_step, status, time_of_run
+      FROM curr_raw
+      ORDER BY image_id, time_of_run DESC
     ),
+
+    -- Previous window: keep only latest row per image_id
+    prev_raw AS (
+      SELECT s.*
+      FROM panstarrs_pipeline.image_status s
+      WHERE s.time_of_run >= (SELECT start_prev FROM bounds)
+        AND s.time_of_run <  (SELECT end_prev   FROM bounds)
+    ),
+    prev_latest AS (
+      SELECT DISTINCT ON (image_id)
+             image_id, pipeline_step, status, time_of_run
+      FROM prev_raw
+      ORDER BY image_id, time_of_run DESC
+    ),
+
     curr_agg AS (
       SELECT
-        COUNT(*) AS total,
-        COUNT(*) FILTER (WHERE status = 'success') AS success,
-        COUNT(*) FILTER (WHERE status <> 'success') AS failure
-      FROM curr
+        COUNT(*)                                                   AS total,
+        COUNT(*) FILTER (WHERE pipeline_step = 'save')            AS success,
+        COUNT(*) FILTER (WHERE pipeline_step <> 'save')           AS failure
+      FROM curr_latest
     ),
     prev_agg AS (
       SELECT
-        COUNT(*) AS total,
-        COUNT(*) FILTER (WHERE status = 'success') AS success
-      FROM prev
+        COUNT(*)                                                   AS total,
+        COUNT(*) FILTER (WHERE pipeline_step = 'save')            AS success
+      FROM prev_latest
     ),
+
+    -- Which step most often appears as the latest non-success?
     worst_step AS (
-      SELECT pipeline_step, COUNT(*) FILTER (WHERE status <> 'success') AS failures
-      FROM curr
+      SELECT pipeline_step, COUNT(*) AS failures
+      FROM curr_latest
+      WHERE pipeline_step <> 'save'
       GROUP BY pipeline_step
       ORDER BY failures DESC NULLS LAST
       LIMIT 1
     )
+
     SELECT
       curr_agg.total::int                                AS total,
       curr_agg.success::int                              AS success,
       curr_agg.failure::int                              AS failure,
       (curr_agg.total - prev_agg.total)                  AS delta_total,
-      (COALESCE(curr_agg.success::numeric,0)/NULLIF(curr_agg.total::numeric,0))
-      - (COALESCE(prev_agg.success::numeric,0)/NULLIF(prev_agg.total::numeric,0))
-                                                        AS delta_success_rate,
+      (
+        COALESCE(curr_agg.success::numeric, 0) / NULLIF(curr_agg.total::numeric, 0)
+        -
+        COALESCE(prev_agg.success::numeric, 0) / NULLIF(prev_agg.total::numeric, 0)
+      )                                                  AS delta_success_rate,
       (SELECT jsonb_build_object('pipeline_step', pipeline_step, 'failures', failures)
          FROM worst_step)                                AS most_problematic_step
     FROM curr_agg, prev_agg;

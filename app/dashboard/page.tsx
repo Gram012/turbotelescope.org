@@ -6,23 +6,24 @@ import { DashboardContent } from "@/components/dashboard-content";
 import { isAdminSession } from "@/lib/authz";
 import { getSuccessOrFail, getRecentImageEvents } from "@/lib/database.server";
 
+export const revalidate = 0;
+
 export default async function UserDashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/api/auth/signin?callbackUrl=/dashboard");
   if (isAdminSession(session)) redirect("/admin");
 
-  // ✅ Run your Node/pg queries on the server only
+  // ✅ fetch on the server
   const successOrFail = await getSuccessOrFail();
   const recent = await getRecentImageEvents();
 
-  // User view: identical layout, but without WAZ Alerts
   return (
     <DashboardContent
       showWazAlerts={false}
       owner="patkel"
       repo="turbo_telescope"
-      successOrFail={successOrFail}
-      recent={recent}
+      successOrFail={successOrFail} // ✅ pass it
+      recent={recent} // ✅ pass it
     />
   );
 }
