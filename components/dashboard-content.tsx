@@ -11,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -20,46 +19,36 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { InviteMemberModal } from "@/components/invite-member-modal";
 import { AuthGuard } from "@/components/auth-guard";
 import { GitHubIssues } from "@/components/github-issues";
+import { Bell, Search, Check, X as XIcon, Telescope } from "lucide-react";
 
-import {
-  Bell,
-  Search,
-  Check,
-  X as XIcon,
-  BarChart,
-  Telescope,
-  MoreHorizontal,
-} from "lucide-react";
+type Row = {
+  image_id: number;
+  file_path: string;
+  status: string;
+  processing_time: number | null;
+  pipeline_step: string;
+  step_message: string | null;
+  time_of_run: string;
+};
+
+type KPI = {
+  success: number;
+  failure: number;
+  total: number;
+};
 
 type DashboardContentProps = {
   owner?: string;
   repo?: string;
-  showWazAlerts?: boolean;
+  showWazAlerts?: boolean; // you can hide/remove if not needed
   impersonationControls?: ReactNode;
   disableAuthGuard?: boolean;
-  successOrFail: {
-    success: number;
-    failure: number;
-    total: number;
-    delta: {
-      total: number;
-      successRate: number;
-    };
-    most_problematic_step?: {
-      pipeline_step: string;
-      failures: number;
-    } | null;
-  };
-  recent: {
-    image_ids: number[];
-    image_names: string[];
-    statuses: string[];
-    pipeline_steps: string[];
-    times: string[];
-  };
+
+  // ✅ passed in from the server page
+  successOrFail: KPI;
+  tableData: Row[];
 };
 
 function MaybeGuard({
@@ -75,93 +64,58 @@ function MaybeGuard({
 export function DashboardContent({
   owner = "patkel",
   repo = "turbo_telescope",
-  showWazAlerts = true,
+  showWazAlerts = false,
   impersonationControls,
   disableAuthGuard = false,
   successOrFail,
-  recent,
+  tableData,
 }: DashboardContentProps) {
   const { data: session } = useSession();
   const user = session?.user;
 
-  // ---- KPIs / Stats ----
+  // Safe defaults so UI never crashes
+  const kpi = successOrFail ?? { success: 0, failure: 0, total: 0 };
+  const total = Math.max(kpi.total, 1);
+
   const stats = [
     {
       title: "Success Rate",
-      value: `${((successOrFail.success / successOrFail.total) * 100).toFixed(
-        1
-      )}%`,
-      change: `${(successOrFail.delta.successRate * 100).toFixed(
-        1
-      )}% from last week`,
+      value: `${((kpi.success / total) * 100).toFixed(1)}%`,
+      change: ``,
       icon: Check,
       color: "text-green-600",
     },
     {
       title: "Failure Rate",
-      value: `${((successOrFail.failure / successOrFail.total) * 100).toFixed(
-        1
-      )}%`,
-      change: `${(-successOrFail.delta.successRate * 100).toFixed(
-        1
-      )}% from last week`,
+      value: `${((kpi.failure / total) * 100).toFixed(1)}%`,
+      change: ``,
       icon: XIcon,
       color: "text-red-600",
     },
     {
-      title: "Most Problematic Step",
-      value: successOrFail.most_problematic_step?.pipeline_step || "—",
-      change: `${successOrFail.most_problematic_step?.failures || 0} failures`,
-      icon: BarChart,
-      color: "text-purple-600",
-    },
-    {
       title: "Images Processed",
-      value: `${successOrFail.total}`,
-      change: `${successOrFail.delta.total >= 0 ? "+" : ""}${
-        successOrFail.delta.total
-      } from last week`,
+      value: `${kpi.total}`,
+      change: ``,
       icon: Telescope,
       color: "text-blue-600",
     },
   ];
 
-  // ---- Temporary placeholders for alerts ----
-  const recentWaz = [
-    {
-      name: "file transfer init from Yaai",
-      email: "6/4 10:10",
-      status: "Task",
-    },
-    { name: "drives spinning up", email: "6/4 2:43", status: "Task" },
-    { name: "drives spinning down", email: "6/3 21:46", status: "Task" },
-    { name: "drive /dev/04 at 60 C", email: "6/3 21:45", status: "WARNING" },
-  ];
+  // derive image_name from file_path
+  const recentItems = (tableData ?? []).slice(0, 20).map((r) => {
+    const base = r.file_path ?? "";
+    const slash = base.lastIndexOf("/") + 1;
+    const dot = base.toLowerCase().lastIndexOf(".fits");
+    const image_name =
+      slash > 0 && dot > slash ? base.substring(slash, dot) : base || "unknown";
+    return {
+      id: r.image_id,
+      image_name,
+      step: r.pipeline_step,
+      time: r.time_of_run,
+    };
+  });
 
-  const recentPtype = [
-    {
-      name: "Opening Enclosure",
-      email: "",
-      status: "6/2 - 21:16",
-    },
-    {
-      name: "Closing Enclosure",
-      email: "",
-      status: "6/2 - 17:37",
-    },
-    {
-      name: "Night: False",
-      email: "No Clouds: True, Low Wind: True, No Rain: True",
-      status: "6/2 - 17:37",
-    },
-    {
-      name: "TurboSitter",
-      email: "Bad observing conditions and enclosure still open",
-      status: "6/2 - 17:37",
-    },
-  ];
-
-  // ---- Render ----
   return (
     <MaybeGuard disabled={disableAuthGuard}>
       <SidebarProvider>
@@ -181,9 +135,7 @@ export function DashboardContent({
                     className="pl-10 w-64 border-slate-300"
                   />
                 </div>
-
                 {impersonationControls}
-
                 <Button variant="ghost" size="sm">
                   <Bell className="w-4 h-4" />
                 </Button>
@@ -209,7 +161,7 @@ export function DashboardContent({
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               {stats.map((stat, i) => (
                 <Card key={i} className="border-slate-200">
                   <CardContent className="p-6">
@@ -238,11 +190,9 @@ export function DashboardContent({
               ))}
             </div>
 
-            {/* Grid */}
+            {/* Recent Pipeline Runs */}
             <div className="grid lg:grid-cols-3 gap-6">
-              {/* Left */}
               <div className="lg:col-span-2 space-y-6">
-                {/* Recent Pipeline Runs */}
                 <Card className="border-slate-200">
                   <CardHeader>
                     <div className="flex items-center justify-between">
@@ -257,22 +207,20 @@ export function DashboardContent({
                       </Button>
                     </div>
                   </CardHeader>
-
                   <CardContent>
                     <div className="space-y-4">
-                      {recent.image_names.map((name, index) => (
+                      {recentItems.map((item) => (
                         <div
-                          key={recent.image_ids[index]}
+                          key={item.id}
                           className="flex items-center space-x-4 p-3 rounded-lg hover:bg-slate-50"
                         >
                           <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-slate-900">
-                              {name}
+                              {item.image_name}
                             </p>
                             <p className="text-xs text-slate-500">
-                              {recent.pipeline_steps[index]} •{" "}
-                              {recent.times[index]}
+                              {item.step} • {item.time}
                             </p>
                           </div>
                         </div>
@@ -285,84 +233,7 @@ export function DashboardContent({
                 <GitHubIssues owner={owner} repo={repo} />
               </div>
 
-              {/* Right: Alerts */}
-              <div className="space-y-6">
-                {/* WAZ Alerts */}
-                {showWazAlerts && (
-                  <Card className="border-slate-200">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle>WAZ Alerts</CardTitle>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {recentWaz.map((u, i) => (
-                          <div key={i} className="flex items-center space-x-3">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-slate-900 truncate">
-                                {u.name}
-                              </p>
-                              <p className="text-xs text-slate-500 truncate">
-                                {u.email}
-                              </p>
-                            </div>
-                            <Badge variant="secondary" className="text-xs">
-                              {u.status}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-4">
-                        <InviteMemberModal
-                          trigger={
-                            <Button variant="outline" className="w-full">
-                              See More Alerts
-                            </Button>
-                          }
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Prototype Alerts */}
-                <Card className="border-slate-200">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle>Prototype Alerts</CardTitle>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {recentPtype.map((u, i) => (
-                        <div key={i} className="flex items-center space-x-3">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-900 truncate">
-                              {u.name}
-                            </p>
-                            <p className="text-xs text-slate-500 truncate">
-                              {u.email}
-                            </p>
-                          </div>
-                          <Badge className="text-xs">{u.status}</Badge>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-4">
-                      <Button variant="outline" className="w-full">
-                        See More Alerts
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              {/* (Optional) Right column content can go here */}
             </div>
           </main>
         </SidebarInset>
