@@ -2,7 +2,6 @@
 
 import { useSession } from "next-auth/react";
 import type { ReactNode } from "react";
-import { getSuccessOrFail, getRecentImageEvents } from "@/lib/database";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -40,8 +39,27 @@ type DashboardContentProps = {
   repo?: string;
   showWazAlerts?: boolean;
   impersonationControls?: ReactNode;
-  /** Skip AuthGuard (useful on /admin where middleware + server checks already protect) */
   disableAuthGuard?: boolean;
+  successOrFail: {
+    success: number;
+    failure: number;
+    total: number;
+    delta: {
+      total: number;
+      successRate: number;
+    };
+    most_problematic_step?: {
+      pipeline_step: string;
+      failures: number;
+    } | null;
+  };
+  recent: {
+    image_ids: number[];
+    image_names: string[];
+    statuses: string[];
+    pipeline_steps: string[];
+    times: string[];
+  };
 };
 
 function MaybeGuard({
@@ -54,18 +72,19 @@ function MaybeGuard({
   return disabled ? <>{children}</> : <AuthGuard>{children}</AuthGuard>;
 }
 
-export async function DashboardContent({
+export function DashboardContent({
   owner = "patkel",
   repo = "turbo_telescope",
   showWazAlerts = true,
   impersonationControls,
   disableAuthGuard = false,
+  successOrFail,
+  recent,
 }: DashboardContentProps) {
   const { data: session } = useSession();
   const user = session?.user;
-  const successOrFail = await getSuccessOrFail();
-  const recent = await getRecentImageEvents();
 
+  // ---- KPIs / Stats ----
   const stats = [
     {
       title: "Success Rate",
@@ -107,60 +126,42 @@ export async function DashboardContent({
     },
   ];
 
+  // ---- Temporary placeholders for alerts ----
   const recentWaz = [
     {
       name: "file transfer init from Yaai",
       email: "6/4 10:10",
-      role: "Admin",
       status: "Task",
     },
-    {
-      name: "drives spinning up",
-      email: "6/4 2:43",
-      role: "Editor",
-      status: "Task",
-    },
-    {
-      name: "drives spinning down",
-      email: "6/3 21:46",
-      role: "Viewer",
-      status: "Task",
-    },
-    {
-      name: "drive /dev/04 at 60 C",
-      email: "6/3 21:45",
-      role: "Editor",
-      status: "WARNING",
-    },
+    { name: "drives spinning up", email: "6/4 2:43", status: "Task" },
+    { name: "drives spinning down", email: "6/3 21:46", status: "Task" },
+    { name: "drive /dev/04 at 60 C", email: "6/3 21:45", status: "WARNING" },
   ];
 
   const recentPtype = [
     {
       name: "Opening Enclosure",
       email: "",
-      role: "Admin",
       status: "6/2 - 21:16",
     },
     {
-      name: "Closing Ensclosure",
+      name: "Closing Enclosure",
       email: "",
-      role: "Editor",
       status: "6/2 - 17:37",
     },
     {
       name: "Night: False",
       email: "No Clouds: True, Low Wind: True, No Rain: True",
-      role: "Viewer",
       status: "6/2 - 17:37",
     },
     {
       name: "TurboSitter",
       email: "Bad observing conditions and enclosure still open",
-      role: "Editor",
       status: "6/2 - 17:37",
     },
   ];
 
+  // ---- Render ----
   return (
     <MaybeGuard disabled={disableAuthGuard}>
       <SidebarProvider>
@@ -181,7 +182,6 @@ export async function DashboardContent({
                   />
                 </div>
 
-                {/* Admin-only controls (View as default / Exit user view) */}
                 {impersonationControls}
 
                 <Button variant="ghost" size="sm">
@@ -191,7 +191,7 @@ export async function DashboardContent({
             </div>
           </header>
 
-          {/* Main Content */}
+          {/* Main */}
           <main className="flex-1 space-y-4 p-4 md:p-6">
             {/* Welcome */}
             <div className="mb-8">
@@ -199,7 +199,7 @@ export async function DashboardContent({
                 Welcome back, {user?.name || "User"}
               </h2>
               <p className="text-slate-600">
-                Here's what's happening.
+                Here’s what’s happening.
                 {user?.email && (
                   <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                     {user.email}
@@ -208,10 +208,10 @@ export async function DashboardContent({
               </p>
             </div>
 
-            {/* STATS */}
+            {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {stats.map((stat, index) => (
-                <Card key={index} className="border-slate-200">
+              {stats.map((stat, i) => (
+                <Card key={i} className="border-slate-200">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -238,10 +238,11 @@ export async function DashboardContent({
               ))}
             </div>
 
-            {/* Content Grid */}
+            {/* Grid */}
             <div className="grid lg:grid-cols-3 gap-6">
-              {/* Left: Activity + Issues */}
+              {/* Left */}
               <div className="lg:col-span-2 space-y-6">
+                {/* Recent Pipeline Runs */}
                 <Card className="border-slate-200">
                   <CardHeader>
                     <div className="flex items-center justify-between">
@@ -259,7 +260,6 @@ export async function DashboardContent({
 
                   <CardContent>
                     <div className="space-y-4">
-                      {/* ✅ REPLACE the hardcoded activity array with this */}
                       {recent.image_names.map((name, index) => (
                         <div
                           key={recent.image_ids[index]}
@@ -281,20 +281,18 @@ export async function DashboardContent({
                   </CardContent>
                 </Card>
 
-                {/* GitHub Issues (component already renders a Card) */}
+                {/* GitHub Issues */}
                 <GitHubIssues owner={owner} repo={repo} />
               </div>
 
               {/* Right: Alerts */}
               <div className="space-y-6">
-                {/* WAZ Alerts — admin view only */}
+                {/* WAZ Alerts */}
                 {showWazAlerts && (
                   <Card className="border-slate-200">
                     <CardHeader>
                       <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle>WAZ Alerts</CardTitle>
-                        </div>
+                        <CardTitle>WAZ Alerts</CardTitle>
                         <Button variant="ghost" size="sm">
                           <MoreHorizontal className="w-4 h-4" />
                         </Button>
@@ -302,11 +300,8 @@ export async function DashboardContent({
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {recentWaz.map((u, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center space-x-3"
-                          >
+                        {recentWaz.map((u, i) => (
+                          <div key={i} className="flex items-center space-x-3">
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-slate-900 truncate">
                                 {u.name}
@@ -315,12 +310,7 @@ export async function DashboardContent({
                                 {u.email}
                               </p>
                             </div>
-                            <Badge
-                              variant={
-                                u.status === "Active" ? "default" : "secondary"
-                              }
-                              className="text-xs"
-                            >
+                            <Badge variant="secondary" className="text-xs">
                               {u.status}
                             </Badge>
                           </div>
@@ -339,13 +329,11 @@ export async function DashboardContent({
                   </Card>
                 )}
 
-                {/* Prototype Alerts — shown for both */}
+                {/* Prototype Alerts */}
                 <Card className="border-slate-200">
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle>Prototype Alerts</CardTitle>
-                      </div>
+                      <CardTitle>Prototype Alerts</CardTitle>
                       <Button variant="ghost" size="sm">
                         <MoreHorizontal className="w-4 h-4" />
                       </Button>
@@ -353,8 +341,8 @@ export async function DashboardContent({
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {recentPtype.map((u, idx) => (
-                        <div key={idx} className="flex items-center space-x-3">
+                      {recentPtype.map((u, i) => (
+                        <div key={i} className="flex items-center space-x-3">
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-slate-900 truncate">
                               {u.name}
