@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -21,7 +22,15 @@ import {
 import { AppSidebar } from "@/components/app-sidebar";
 import { AuthGuard } from "@/components/auth-guard";
 import { GitHubIssues } from "@/components/github-issues";
-import { Bell, Search, Check, X as XIcon, Telescope } from "lucide-react";
+
+import {
+  Bell,
+  Search,
+  Check,
+  X as XIcon,
+  Telescope,
+  MoreHorizontal,
+} from "lucide-react";
 
 type Row = {
   image_id: number;
@@ -42,11 +51,10 @@ type KPI = {
 type DashboardContentProps = {
   owner?: string;
   repo?: string;
-  showWazAlerts?: boolean; // you can hide/remove if not needed
+  showWazAlerts?: boolean;
   impersonationControls?: ReactNode;
   disableAuthGuard?: boolean;
 
-  // ✅ passed in from the server page
   successOrFail: KPI;
   tableData: Row[];
 };
@@ -64,7 +72,7 @@ function MaybeGuard({
 export function DashboardContent({
   owner = "patkel",
   repo = "turbo_telescope",
-  showWazAlerts = false,
+  showWazAlerts = true,
   impersonationControls,
   disableAuthGuard = false,
   successOrFail,
@@ -73,7 +81,6 @@ export function DashboardContent({
   const { data: session } = useSession();
   const user = session?.user;
 
-  // Safe defaults so UI never crashes
   const kpi = successOrFail ?? { success: 0, failure: 0, total: 0 };
   const total = Math.max(kpi.total, 1);
 
@@ -81,27 +88,23 @@ export function DashboardContent({
     {
       title: "Success Rate",
       value: `${((kpi.success / total) * 100).toFixed(1)}%`,
-      change: ``,
       icon: Check,
       color: "text-green-600",
     },
     {
       title: "Failure Rate",
       value: `${((kpi.failure / total) * 100).toFixed(1)}%`,
-      change: ``,
       icon: XIcon,
       color: "text-red-600",
     },
     {
       title: "Images Processed",
       value: `${kpi.total}`,
-      change: ``,
       icon: Telescope,
       color: "text-blue-600",
     },
   ];
 
-  // derive image_name from file_path
   const recentItems = (tableData ?? []).slice(0, 20).map((r) => {
     const base = r.file_path ?? "";
     const slash = base.lastIndexOf("/") + 1;
@@ -115,6 +118,62 @@ export function DashboardContent({
       time: r.time_of_run,
     };
   });
+
+  // --- Placeholder WAZ Alerts ---
+  const recentWaz = [
+    {
+      name: "file transfer init from Yaai",
+      email: "6/4 10:10",
+      role: "Admin",
+      status: "Task",
+    },
+    {
+      name: "drives spinning up",
+      email: "6/4 2:43",
+      role: "Editor",
+      status: "Task",
+    },
+    {
+      name: "drives spinning down",
+      email: "6/3 21:46",
+      role: "Viewer",
+      status: "Task",
+    },
+    {
+      name: "drive /dev/04 at 60°C",
+      email: "6/3 21:45",
+      role: "Editor",
+      status: "WARNING",
+    },
+  ];
+
+  // --- Placeholder Prototype Alerts ---
+  const recentPtype = [
+    {
+      name: "Opening Enclosure",
+      email: "",
+      role: "Admin",
+      status: "6/2 - 21:16",
+    },
+    {
+      name: "Closing Enclosure",
+      email: "",
+      role: "Editor",
+      status: "6/2 - 17:37",
+    },
+    {
+      name: "Night: False",
+      email: "No Clouds: True, Low Wind: True, No Rain: True",
+      role: "Viewer",
+      status: "6/2 - 17:37",
+    },
+    {
+      name: "TurboSitter",
+      email: "Bad observing conditions and enclosure still open",
+      role: "Editor",
+      status: "6/2 - 17:37",
+    },
+  ];
 
   return (
     <MaybeGuard disabled={disableAuthGuard}>
@@ -143,7 +202,7 @@ export function DashboardContent({
             </div>
           </header>
 
-          {/* Main */}
+          {/* Main Content */}
           <main className="flex-1 space-y-4 p-4 md:p-6">
             {/* Welcome */}
             <div className="mb-8">
@@ -160,7 +219,7 @@ export function DashboardContent({
               </p>
             </div>
 
-            {/* Stats */}
+            {/* KPI Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               {stats.map((stat, i) => (
                 <Card key={i} className="border-slate-200">
@@ -173,11 +232,6 @@ export function DashboardContent({
                         <p className="text-2xl font-bold text-slate-900">
                           {stat.value}
                         </p>
-                        {stat.change && (
-                          <p className="text-sm text-green-600 font-medium">
-                            {stat.change}
-                          </p>
-                        )}
                       </div>
                       <div
                         className={`p-3 rounded-lg bg-slate-100 ${stat.color}`}
@@ -190,8 +244,9 @@ export function DashboardContent({
               ))}
             </div>
 
-            {/* Recent Pipeline Runs */}
+            {/* Content Grid */}
             <div className="grid lg:grid-cols-3 gap-6">
+              {/* Left: Recent Runs + GitHub */}
               <div className="lg:col-span-2 space-y-6">
                 <Card className="border-slate-200">
                   <CardHeader>
@@ -229,11 +284,87 @@ export function DashboardContent({
                   </CardContent>
                 </Card>
 
-                {/* GitHub Issues */}
                 <GitHubIssues owner={owner} repo={repo} />
               </div>
 
-              {/* (Optional) Right column content can go here */}
+              {/* Right: Alerts */}
+              <div className="space-y-6">
+                {/* WAZ Alerts */}
+                {showWazAlerts && (
+                  <Card className="border-slate-200">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle>WAZ Alerts</CardTitle>
+                        </div>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {recentWaz.map((u, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center space-x-3"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-slate-900 truncate">
+                                {u.name}
+                              </p>
+                              <p className="text-xs text-slate-500 truncate">
+                                {u.email}
+                              </p>
+                            </div>
+                            <Badge
+                              variant={
+                                u.status === "WARNING"
+                                  ? "destructive"
+                                  : "secondary"
+                              }
+                              className="text-xs"
+                            >
+                              {u.status}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Prototype Alerts */}
+                <Card className="border-slate-200">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Prototype Alerts</CardTitle>
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {recentPtype.map((u, idx) => (
+                        <div key={idx} className="flex items-center space-x-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-900 truncate">
+                              {u.name}
+                            </p>
+                            <p className="text-xs text-slate-500 truncate">
+                              {u.email}
+                            </p>
+                          </div>
+                          <Badge className="text-xs">{u.status}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </main>
         </SidebarInset>
