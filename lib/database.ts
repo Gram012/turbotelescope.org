@@ -1,4 +1,5 @@
-import "server-only";
+"use server";
+
 import { neon } from "@neondatabase/serverless";
 
 const sql = neon(
