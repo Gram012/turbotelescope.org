@@ -210,75 +210,132 @@ export default function TurboSitterPage() {
               </header>
 
               {/* Top row: Weather + Site Cam + Bot */}
-              {/* Right Column */}
-              <div className="flex flex-col gap-6">
-                <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5">
-                  <div className="flex items-center justify-between mb-2">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Weather Card */}
+                <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden min-h-[28rem] p-5">
+                  <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                      <Camera className="w-5 h-5 text-green-600" /> General Site
-                      Camera
+                      <Cloud className="w-5 h-5 text-blue-600" /> Latest Weather
+                      Data
                     </h2>
                     <button
-                      onClick={fetchLatestImage}
-                      disabled={imageLoading}
-                      className="inline-flex items-center gap-2 border border-slate-200 px-2 py-1 rounded-lg text-xs hover:bg-slate-50 disabled:opacity-50"
+                      onClick={() => setLoading(true)}
+                      className="inline-flex items-center gap-2 border border-slate-200 px-3 py-1.5 rounded-xl text-sm hover:bg-slate-50"
                     >
-                      <RefreshCw
-                        className={`w-3 h-3 ${
-                          imageLoading ? "animate-spin" : ""
-                        }`}
-                      />
-                      Refresh
+                      <RefreshCw className="w-4 h-4" /> Refresh
                     </button>
                   </div>
-                  <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-100 relative aspect-video">
-                    {imageLoading && !latestImage ? (
-                      <div className="absolute inset-0 flex items-center justify-center text-slate-500">
-                        Loading...
-                      </div>
-                    ) : latestImage ? (
-                      <img
-                        src={latestImage}
-                        alt="Latest site camera capture"
-                        className="w-full h-full object-contain"
+                  {loading ? (
+                    <div className="text-slate-500">Loading…</div>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <KV
+                        label="Air Temp"
+                        value={fmt(row?.temperature, "°C")}
                       />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-slate-500">
-                        No image available
-                      </div>
-                    )}
-                  </div>
-                  {lastUpdated && (
-                    <div className="text-xs text-slate-500 mt-2">
-                      Last updated: {lastUpdated.toLocaleTimeString()}
+                      <KV label="Dew Point" value={fmt(row?.dewpoint, "°C")} />
+                      <KV label="Humidity" value={pct(row?.humidity)} />
+                      <KV label="Pressure" value={fmt(row?.pressure, "hPa")} />
+                      <KV
+                        label="Wind Speed"
+                        value={fmt(row?.windspeed, "m/s")}
+                      />
+                      <KV label="Wind Gust" value={fmt(row?.windgust, "m/s")} />
+                      <KV
+                        label="Wind Dir"
+                        value={fmt(row?.winddirection, "°")}
+                      />
+                      <KV label="Cloud Cover" value={pct(row?.cloudcover)} />
+                      <KV
+                        label="Rain Rate"
+                        value={fmt(row?.rainrate, "mm/hr")}
+                      />
+                      <KV label="Sky Temp" value={fmt(row?.skytemp, "°C")} />
+                      <KV
+                        label="Sky Brightness"
+                        value={fmt(row?.skybrightness, "mag/arcsec²")}
+                      />
+                      <KV label="Sky Quality" value={fmt(row?.skyquality)} />
+                      <KV
+                        label="Star FWHM"
+                        value={fmt(row?.starfwhm, "arcsec")}
+                      />
+                      <KV label="Avg Period" value={fmt(row?.avgperiod, "s")} />
                     </div>
                   )}
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5 flex flex-col">
-                  <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2 mb-2">
-                    <Activity className="w-5 h-5 text-indigo-600" /> TURBOSitter
-                    Bot Readout
-                  </h2>
-                  <div className="rounded-xl border border-slate-200 p-4 flex-1 min-h-0 overflow-auto">
-                    <ul className="text-sm text-slate-700 space-y-2">
-                      <li>
-                        <span className="font-medium">Status:</span> Nominal
-                      </li>
-                      <li>
-                        <span className="font-medium">Last Poll:</span> —
-                      </li>
-                      <li>
-                        <span className="font-medium">Active Alerts:</span> None
-                      </li>
-                      <li>
-                        <span className="font-medium">Recent Events:</span>
-                        <ul className="ml-4 list-disc">
-                          <li>—</li>
-                          <li>—</li>
-                        </ul>
-                      </li>
-                    </ul>
+                {/* Right Column — perfectly matched height */}
+                <div className="flex flex-col gap-6">
+                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5">
+                    <div className="flex items-center justify-between mb-2">
+                      <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                        <Camera className="w-5 h-5 text-green-600" /> General
+                        Site Camera
+                      </h2>
+                      <button
+                        onClick={fetchLatestImage}
+                        disabled={imageLoading}
+                        className="inline-flex items-center gap-2 border border-slate-200 px-2 py-1 rounded-lg text-xs hover:bg-slate-50 disabled:opacity-50"
+                      >
+                        <RefreshCw
+                          className={`w-3 h-3 ${
+                            imageLoading ? "animate-spin" : ""
+                          }`}
+                        />
+                        Refresh
+                      </button>
+                    </div>
+                    <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-100 relative aspect-video">
+                      {imageLoading && !latestImage ? (
+                        <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+                          Loading...
+                        </div>
+                      ) : latestImage ? (
+                        <img
+                          src={latestImage}
+                          alt="Latest site camera capture"
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+                          No image available
+                        </div>
+                      )}
+                    </div>
+                    {lastUpdated && (
+                      <div className="text-xs text-slate-500 mt-2">
+                        Last updated: {lastUpdated.toLocaleTimeString()}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5 flex flex-col">
+                    <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2 mb-2">
+                      <Activity className="w-5 h-5 text-indigo-600" />{" "}
+                      TURBOSitter Bot Readout
+                    </h2>
+                    <div className="rounded-xl border border-slate-200 p-4 flex-1 min-h-0 overflow-auto">
+                      <ul className="text-sm text-slate-700 space-y-2">
+                        <li>
+                          <span className="font-medium">Status:</span> Nominal
+                        </li>
+                        <li>
+                          <span className="font-medium">Last Poll:</span> —
+                        </li>
+                        <li>
+                          <span className="font-medium">Active Alerts:</span>{" "}
+                          None
+                        </li>
+                        <li>
+                          <span className="font-medium">Recent Events:</span>
+                          <ul className="ml-4 list-disc">
+                            <li>—</li>
+                            <li>—</li>
+                          </ul>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </div>
