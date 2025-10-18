@@ -295,7 +295,7 @@ export default function TurboSitterPage() {
                         <img
                           src={latestImage}
                           alt="Latest site camera capture"
-                          className="w-full h-full object-contain"
+                          className="w-full h-full object-cover"
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center text-slate-500">
