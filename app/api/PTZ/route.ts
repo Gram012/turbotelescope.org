@@ -6,7 +6,7 @@ export async function GET() {
         // List all blobs and get the most recent one
         const { blobs } = await list({
             limit: 100, // Adjust based on how many files you expect
-            prefix: 'capture_20', // Match your filename pattern from the batch script
+            prefix: 'capture_', // Match your filename pattern from the batch script
         });
 
         if (blobs.length === 0) {
