@@ -56,6 +56,9 @@ export default function TurboSitterPage() {
     central: false,
     south: false,
   });
+  const [latestImage, setLatestImage] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -151,6 +154,27 @@ export default function TurboSitterPage() {
     []
   );
 
+  const fetchLatestImage = async () => {
+    setImageLoading(true);
+    try {
+      const response = await fetch("/api/PTZ"); // You'll need to create this API route
+      const data = await response.json();
+      if (data.url) {
+        setLatestImage(data.url);
+        setLastUpdated(new Date());
+      }
+    } catch (error) {
+      console.error("Failed to fetch latest image:", error);
+    } finally {
+      setImageLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchLatestImage();
+    const interval = setInterval(fetchLatestImage, 1800000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -244,18 +268,46 @@ export default function TurboSitterPage() {
                 {/* Right Column — perfectly matched height */}
                 <div className="grid grid-rows-2 gap-6 h-[28rem]">
                   <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5 min-h-0 flex flex-col">
-                    <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2 mb-2">
-                      <Video className="w-5 h-5 text-green-600" /> General Site
-                      Camera
-                    </h2>
-                    <div className="rounded-xl overflow-hidden border border-slate-200 flex-1 min-h-0">
-                      <video className="w-full h-full" controls muted>
-                        <source
-                          src="/feeds/site-general.m3u8"
-                          type="application/vnd.apple.mpegurl"
+                    <div className="flex items-center justify-between mb-2">
+                      <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                        <Camera className="w-5 h-5 text-green-600" /> General
+                        Site Camera
+                      </h2>
+                      <button
+                        onClick={fetchLatestImage}
+                        disabled={imageLoading}
+                        className="inline-flex items-center gap-2 border border-slate-200 px-2 py-1 rounded-lg text-xs hover:bg-slate-50 disabled:opacity-50"
+                      >
+                        <RefreshCw
+                          className={`w-3 h-3 ${
+                            imageLoading ? "animate-spin" : ""
+                          }`}
                         />
-                      </video>
+                        Refresh
+                      </button>
                     </div>
+                    <div className="rounded-xl overflow-hidden border border-slate-200 flex-1 min-h-0 bg-slate-100 relative">
+                      {imageLoading && !latestImage ? (
+                        <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+                          Loading...
+                        </div>
+                      ) : latestImage ? (
+                        <img
+                          src={latestImage}
+                          alt="Latest site camera capture"
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+                          No image available
+                        </div>
+                      )}
+                    </div>
+                    {lastUpdated && (
+                      <div className="text-xs text-slate-500 mt-2">
+                        Last updated: {lastUpdated.toLocaleTimeString()}
+                      </div>
+                    )}
                   </div>
 
                   <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5 min-h-0 flex flex-col">
