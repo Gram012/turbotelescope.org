@@ -267,7 +267,7 @@ export default function TurboSitterPage() {
 
                 {/* Right Column — perfectly matched height */}
                 <div className="grid grid-rows-2 gap-6 h-[28rem]">
-                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5 min-h-0 flex flex-col">
+                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5 flex flex-col">
                     <div className="flex items-center justify-between mb-2">
                       <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
                         <Camera className="w-5 h-5 text-green-600" /> General
@@ -286,19 +286,19 @@ export default function TurboSitterPage() {
                         Refresh
                       </button>
                     </div>
-                    <div className="rounded-xl overflow-hidden border border-slate-200 flex-1 min-h-0 bg-slate-100 relative">
+                    <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-100 relative">
                       {imageLoading && !latestImage ? (
-                        <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+                        <div className="absolute inset-0 flex items-center justify-center text-slate-500 h-48">
                           Loading...
                         </div>
                       ) : latestImage ? (
                         <img
                           src={latestImage}
                           alt="Latest site camera capture"
-                          className="w-full h-full object-cover"
+                          className="w-full h-auto"
                         />
                       ) : (
-                        <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+                        <div className="absolute inset-0 flex items-center justify-center text-slate-500 h-48">
                           No image available
                         </div>
                       )}
