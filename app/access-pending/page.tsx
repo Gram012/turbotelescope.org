@@ -1,7 +1,6 @@
 "use client";
 
 export default function AccessPendingPage() {
-  // Minimal blank screen with the logo pulsing in the center
   return (
     <main className="min-h-screen grid place-items-center bg-white">
       <img

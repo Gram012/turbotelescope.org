@@ -119,7 +119,7 @@ export function DashboardContent({
     };
   });
 
-  // --- Placeholder WAZ Alerts ---
+  //TODO Placeholder WAZ Alerts
   const recentWaz = [
     {
       name: "file transfer init from Yaai",
@@ -147,7 +147,7 @@ export function DashboardContent({
     },
   ];
 
-  // --- Placeholder Prototype Alerts ---
+  //TODO Placeholder Prototype Alerts
   const recentPtype = [
     {
       name: "Opening Enclosure",

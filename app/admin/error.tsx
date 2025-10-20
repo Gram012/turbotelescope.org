@@ -11,7 +11,6 @@ export default function AdminError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Will show up in the browser console and Vercel logs
     console.error("[/admin] error boundary:", error);
   }, [error]);
 

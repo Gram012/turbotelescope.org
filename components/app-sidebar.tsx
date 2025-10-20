@@ -39,6 +39,7 @@ import { useMemo } from "react";
 type NavItem = { title: string; url: string; icon: any; external?: boolean };
 
 const navigationItems: NavItem[] = [
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   {
     title: "Image Health Website",
     url: "https://ihw.turbotelescope.org",
@@ -64,7 +65,6 @@ const navigationItems: NavItem[] = [
     icon: Shell,
     external: true,
   },
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Turbositter", url: "/dashboard/turbositter", icon: ScanEye },
 ];
 

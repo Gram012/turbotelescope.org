@@ -1,4 +1,3 @@
-// app/dashboard/users/page.tsx
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -21,13 +20,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function TeamMembersPage() {
-  // Require sign-in
+  //Require sign-in
   const session = await getServerSession(authOptions);
   if (!session) redirect("/api/auth/signin?callbackUrl=/dashboard/users");
 
   const isAdmin = isAdminSession(session);
 
-  // Load users (and surface any DB error in the client)
+  //Load users (and surface any DB error in the client)
   let users: DBUser[] = [];
   let loadError: string | null = null;
 
@@ -36,8 +35,6 @@ export default async function TeamMembersPage() {
   } catch (e: any) {
     loadError = e?.message || "Failed to load users.";
   }
-
-  // --- Server Actions (TS-safe via type guard) ---
 
   async function addUserAction(formData: FormData) {
     "use server";
@@ -77,10 +74,10 @@ export default async function TeamMembersPage() {
     const login = String(formData.get("login") || "")
       .trim()
       .toLowerCase();
-    const mode = String(formData.get("mode") || "deactivate"); // "deactivate" | "delete"
+    const mode = String(formData.get("mode") || "deactivate");
 
     if (!login) return;
-    // Safety: cannot remove yourself or any super admin
+
     if (login === actorLogin) return;
     if (SUPER_ADMINS.has(login)) return;
 

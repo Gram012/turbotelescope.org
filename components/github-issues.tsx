@@ -13,7 +13,7 @@ import { Check, Loader2, RotateCcw } from "lucide-react";
 
 type GitHubIssue = {
   id: number;
-  number: number; // required to close
+  number: number;
   title: string;
   user: { login: string };
   created_at: string;
@@ -26,26 +26,24 @@ type GitHubIssuesProps = {
   limit?: number;
 };
 
-// Represents a scheduled close the user can undo
 type PendingClose = {
   key: string;
   issue: GitHubIssue;
-  deadline: number; // epoch ms when it will fire
-  duration: number; // ms total
-  timeoutId: number; // window.setTimeout id (for delayed commit)
+  deadline: number;
+  duration: number;
+  timeoutId: number;
 };
 
-const ANIM_MS = 200; // slide in/out duration (ms)
+const ANIM_MS = 200;
 
 export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
   const [issues, setIssues] = useState<GitHubIssue[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingClose[]>([]);
-  const [now, setNow] = useState<number>(Date.now()); // for progress bars
-  const [entered, setEntered] = useState<Record<string, boolean>>({}); // controls slide-in/out
+  const [now, setNow] = useState<number>(Date.now());
+  const [entered, setEntered] = useState<Record<string, boolean>>({});
   const tickRef = useRef<number | null>(null);
 
-  // Fetch issues (already filtered to signed-in user on the server)
   useEffect(() => {
     async function fetchIssues() {
       try {
@@ -69,7 +67,6 @@ export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
     fetchIssues();
   }, [limit]);
 
-  // Progress ticker for countdown bars
   useEffect(() => {
     function tick() {
       setNow(Date.now());
@@ -81,7 +78,6 @@ export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
     };
   }, []);
 
-  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       pending.forEach((p) => clearTimeout(p.timeoutId));
@@ -89,7 +85,6 @@ export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Helper: start slide-out for a toast key, then remove after anim
   const slideOutAndRemove = (key: string) => {
     setEntered((e) => ({ ...e, [key]: false }));
     setTimeout(() => {
@@ -98,13 +93,10 @@ export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
     }, ANIM_MS);
   };
 
-  // Schedule a close with undo window
   const scheduleClose = (issue: GitHubIssue, delayMs = 10000) => {
-    // Prevent duplicates if already pending
     const alreadyPending = pending.some((p) => p.issue.number === issue.number);
     if (alreadyPending) return;
 
-    // Optimistically hide from list
     setIssues((prev) => prev.filter((i) => i.number !== issue.number));
 
     const deadline = Date.now() + delayMs;
@@ -122,36 +114,29 @@ export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
           const body = await res.json().catch(() => ({}));
           throw new Error(body?.error || "Failed to close issue");
         }
-        // Success: slide out and remove toast (if it still exists)
         slideOutAndRemove(key);
       } catch (e: any) {
-        // Failure: restore issue and slide out/remove the toast
         setIssues((prev) => [issue, ...prev]);
         setError(e.message || "Failed to close issue");
         slideOutAndRemove(key);
       }
     }, delayMs);
 
-    // New toast goes to the END so newest is at the bottom
     setPending((prev) => [
       ...prev,
       { key, issue, deadline, duration: delayMs, timeoutId },
     ]);
 
-    // Trigger slide-in after mount
     requestAnimationFrame(() => {
       setEntered((e) => ({ ...e, [key]: true }));
     });
   };
 
-  // Undo a scheduled close
   const undoClose = (key: string) => {
     const entry = pending.find((p) => p.key === key);
     if (!entry) return;
     clearTimeout(entry.timeoutId);
-    // Restore the issue to the list (at the top)
     setIssues((prev) => [entry.issue, ...prev]);
-    // Slide-out, then remove
     slideOutAndRemove(key);
   };
 
@@ -214,9 +199,7 @@ export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
               aria-live="polite"
               className={[
                 "w-80 rounded-xl border shadow-lg overflow-hidden",
-                // Tint
                 "bg-rose-50 border-rose-200",
-                // Slide-in/out from right + fade
                 "transform transition-all ease-out",
                 `duration-[${ANIM_MS}ms]`,
                 entered[p.key]

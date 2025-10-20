@@ -1,4 +1,3 @@
-// lib/user.ts
 import { sql } from "@vercel/postgres";
 
 export type DBUser = {

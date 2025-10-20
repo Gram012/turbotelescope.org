@@ -11,7 +11,6 @@ export default async function UserDashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/api/auth/signin?callbackUrl=/dashboard");
 
-  // ✅ On /dashboard, push admins to /admin
   if (isAdminSession(session)) redirect("/admin");
 
   const [tableData, successOrFail] = await Promise.all([

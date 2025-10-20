@@ -3,17 +3,15 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
     try {
-        // List all blobs and get the most recent one
         const { blobs } = await list({
-            limit: 100, // Adjust based on how many files you expect
-            prefix: 'capture_', // Match your filename pattern from the batch script
+            limit: 100,
+            prefix: 'capture_',
         });
 
         if (blobs.length === 0) {
             return NextResponse.json({ url: null, error: 'No images found' });
         }
 
-        // Sort by uploadedAt to get the most recent
         const sortedBlobs = blobs.sort((a, b) =>
             new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
         );
@@ -31,4 +29,4 @@ export async function GET() {
     }
 }
 
-export const dynamic = 'force-dynamic'; // Disable caching for this route
+export const dynamic = 'force-dynamic'; 

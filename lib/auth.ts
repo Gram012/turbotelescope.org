@@ -1,4 +1,3 @@
-// lib/auth.ts
 import type { NextAuthOptions } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
 import {
@@ -9,7 +8,7 @@ import {
 import { SUPER_ADMINS } from "@/lib/authz";
 
 export const authOptions: NextAuthOptions = {
-    session: { strategy: "jwt" }, // ensure JWT strategy
+    session: { strategy: "jwt" },
     providers: [
         GitHubProvider({
             clientId: process.env.GITHUB_CLIENT_ID!,
@@ -18,7 +17,6 @@ export const authOptions: NextAuthOptions = {
         }),
     ],
     callbacks: {
-        // Invite-only login: allow SUPER_ADMIN or user exists+active in DB
         async signIn({ profile }) {
             const gh = profile as any;
             const login = (gh?.login || "").toLowerCase();
@@ -49,7 +47,6 @@ export const authOptions: NextAuthOptions = {
         },
 
         async jwt({ token, account, profile }) {
-            // On fresh sign-in, set login + accessToken
             if (account && profile) {
                 const login = (profile as any)?.login?.toLowerCase();
                 if (login) token.login = login;
@@ -58,7 +55,6 @@ export const authOptions: NextAuthOptions = {
                 }
             }
 
-            // If login missing (e.g., after refresh), try to recover it via GitHub ID
             if (!token.login && token.sub) {
                 const ghId = Number(token.sub);
                 if (!Number.isNaN(ghId)) {
@@ -67,7 +63,6 @@ export const authOptions: NextAuthOptions = {
                 }
             }
 
-            // Load role/is_active from DB (or SUPER_ADMIN override)
             const login = (token as any)?.login as string | undefined;
             if (login) {
                 if (SUPER_ADMINS.has(login)) {

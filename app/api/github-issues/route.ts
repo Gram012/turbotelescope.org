@@ -1,4 +1,3 @@
-// app/api/github-issues/route.ts
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -28,7 +27,6 @@ export async function GET(req: Request) {
     const issues = await gh.json().catch(() => []);
     if (!gh.ok) return NextResponse.json({ error: "GitHub error", details: issues }, { status: gh.status });
 
-    // Optionally filter to issues created by the signed-in GitHub user:
     const login = (session.user as any).login;
     const mine = Array.isArray(issues) ? issues.filter((i: any) => i?.user?.login?.toLowerCase() === login?.toLowerCase()) : [];
 

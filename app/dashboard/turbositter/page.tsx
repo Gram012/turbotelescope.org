@@ -157,7 +157,7 @@ export default function TurboSitterPage() {
   const fetchLatestImage = async () => {
     setImageLoading(true);
     try {
-      const response = await fetch("/api/PTZ"); // You'll need to create this API route
+      const response = await fetch("/api/PTZ");
       const data = await response.json();
       if (data.url) {
         setLatestImage(data.url);
