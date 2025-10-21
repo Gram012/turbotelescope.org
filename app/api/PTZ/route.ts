@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 export async function GET() {
     try {
         const { blobs } = await list({
-            limit: 100,
+            limit: 10000,
             prefix: 'capture_',
         });
 
