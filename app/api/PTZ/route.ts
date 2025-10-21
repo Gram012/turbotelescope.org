@@ -1,4 +1,4 @@
-import { list } from '@vercel/blob';
+import { list, del } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
@@ -15,6 +15,13 @@ export async function GET() {
         const sortedBlobs = blobs.sort((a, b) =>
             new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
         );
+
+        if (sortedBlobs.length > 20) {
+            const blobsToDelete = sortedBlobs.slice(20);
+            await Promise.all(
+                blobsToDelete.map(blob => del(blob.url))
+            );
+        }
 
         const latestBlob = sortedBlobs[0];
         console.log(latestBlob)
