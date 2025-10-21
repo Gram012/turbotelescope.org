@@ -17,6 +17,7 @@ export async function GET() {
         );
 
         const latestBlob = sortedBlobs[0];
+        console.log(latestBlob)
 
         return NextResponse.json({
             url: latestBlob.url,
