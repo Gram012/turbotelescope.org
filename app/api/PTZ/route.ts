@@ -5,7 +5,7 @@ export async function GET() {
     try {
         const { blobs } = await list({
             limit: 10000,
-            prefix: 'capture_',
+            prefix: 'PTZ_Cam/capture_',
         });
 
         if (blobs.length === 0) {
