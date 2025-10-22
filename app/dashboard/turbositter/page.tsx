@@ -178,7 +178,7 @@ export default function TurboSitterPage() {
   const fetchCentralAxisImage = async () => {
     setCentralAxisLoading(true);
     try {
-      const response = await fetch("/api/axis");
+      const response = await fetch("/api/Axis");
       const data = await response.json();
       if (data.url) {
         setCentralAxisImage(data.url);
