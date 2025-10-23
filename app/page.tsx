@@ -1,5 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Shield, Users, BarChart3, Zap } from "lucide-react";
+import {
+  ArrowRight,
+  Shield,
+  Users,
+  BarChart3,
+  Zap,
+  Telescope,
+} from "lucide-react";
 import Link from "next/link";
 
 export default function HomePage() {
@@ -15,7 +22,7 @@ export default function HomePage() {
               TURBO Telescope
             </span>
           </div>
-          <nav className="hidden md:flex items-center space-x-8">
+          {/* <nav className="hidden md:flex items-center space-x-8">
             <a
               href="#features"
               className="text-slate-600 hover:text-slate-900 transition-colors"
@@ -34,7 +41,7 @@ export default function HomePage() {
             >
               Dolor
             </a>
-          </nav>
+          </nav> */}
           <Link href="/signin">
             <Button
               variant="outline"
@@ -50,7 +57,7 @@ export default function HomePage() {
       <section className="container mx-auto px-4 py-20 text-center">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-5xl md:text-6xl font-bold text-slate-900 mb-6 leading-tight">
-            The Future Home of
+            The Home of
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               {" "}
               Everything{" "}
@@ -58,9 +65,9 @@ export default function HomePage() {
             TURBO
           </h1>
           <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto leading-relaxed">
-            A public home page with some background information. A portal sign
-            in for team members to access all turbo web applications, all in
-            once place.
+            A place for everyone to learn all there is to know about the TURBO
+            Telescope. A portal for team members to access all of our web
+            applications. All in one place.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/signin">
@@ -84,24 +91,26 @@ export default function HomePage() {
               What is TURBO Telescope?
             </h2>
             <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-              eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-              enim ad minim veniam, quis nostrud exercitation ullamco laboris
-              nisi ut aliquip ex ea commodo consequat.
+              The Total-Coverage Ultra-Fast Response to Binary-Mergers
+              Observatory (TURBO) is a collaborative multi messenger astronomy
+              initiative led by the University of Minnesota, in partnership with
+              the University of New Mexico and the University of Crete. TURBO is
+              designed to capture the earliest light from cataclysmic events
+              within seconds of receiving alerts from gravitational wave
+              detectors.
             </p>
           </div>
-
+          {/* TODO: Make Pages for These */}
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center p-6 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Users className="w-6 h-6 text-blue-600" />
               </div>
               <h3 className="text-xl font-semibold text-slate-900 mb-2">
-                Lorem
+                The Team
               </h3>
               <p className="text-slate-600">
-                Duis aute irure dolor in reprehenderit in voluptate velit esse
-                cillum dolore eu fugiat nulla pariatur.
+                Get to know the people behind the science.
               </p>
             </div>
 
@@ -110,24 +119,25 @@ export default function HomePage() {
                 <BarChart3 className="w-6 h-6 text-purple-600" />
               </div>
               <h3 className="text-xl font-semibold text-slate-900 mb-2">
-                Ipsum
+                The Data
               </h3>
               <p className="text-slate-600">
-                Duis aute irure dolor in reprehenderit in voluptate velit esse
-                cillum dolore eu fugiat nulla pariatur.
+                Learn more about what makes TURBO special. See how images are
+                captured, processed, and analyzied.
               </p>
             </div>
 
             <div className="text-center p-6 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Zap className="w-6 h-6 text-green-600" />
+                <Telescope className="w-6 h-6 text-green-600" />
               </div>
               <h3 className="text-xl font-semibold text-slate-900 mb-2">
-                Dolor
+                The Science
               </h3>
               <p className="text-slate-600">
-                Duis aute irure dolor in reprehenderit in voluptate velit esse
-                cillum dolore eu fugiat nulla pariatur.
+                Discover what drives our curiosity. Learn more about
+                astronomical transients and how they shape our understanding of
+                the visible universe.
               </p>
             </div>
           </div>
@@ -138,7 +148,7 @@ export default function HomePage() {
       <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Ready to build a new face?
+            The Future of Ultra-Fast Astronomy is Here
           </h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
             Duis aute irure dolor in reprehenderit in voluptate velit esse
@@ -154,19 +164,18 @@ export default function HomePage() {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-white" />
+                  <img src="/turboIconW.png" className="text-color-blue-600" />
                 </div>
                 <span className="text-xl font-bold text-white">
                   TURBO Telescope
                 </span>
               </div>
               <p className="text-slate-400">
-                Duis aute irure dolor in reprehenderit in voluptate velit esse
-                cillum dolore eu fugiat nulla pariatur.
+                Still curious? Check out these links.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold text-white mb-4">Product</h4>
+              <h4 className="font-semibold text-white mb-4">News</h4>
               <ul className="space-y-2">
                 <li>
                   <a href="#" className="hover:text-white transition-colors">
@@ -186,41 +195,45 @@ export default function HomePage() {
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-white mb-4">Company</h4>
+              <h4 className="font-semibold text-white mb-4">Contact</h4>
               <ul className="space-y-2">
                 <li>
                   <a href="#" className="hover:text-white transition-colors">
-                    About
+                    Email
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://cse.umn.edu/physics"
+                    className="hover:text-white transition-colors"
+                    target="_blank"
+                  >
+                    UofM SPA
                   </a>
                 </li>
                 <li>
                   <a href="#" className="hover:text-white transition-colors">
-                    Blog
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Careers
+                    UNM
                   </a>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-white mb-4">Support</h4>
+              <h4 className="font-semibold text-white mb-4">Irure</h4>
               <ul className="space-y-2">
                 <li>
                   <a href="#" className="hover:text-white transition-colors">
-                    Help Center
+                    Lorem
                   </a>
                 </li>
                 <li>
                   <a href="#" className="hover:text-white transition-colors">
-                    Contact
+                    Ipsum
                   </a>
                 </li>
                 <li>
                   <a href="#" className="hover:text-white transition-colors">
-                    Status
+                    Dolor
                   </a>
                 </li>
               </ul>

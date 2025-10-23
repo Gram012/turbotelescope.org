@@ -2,7 +2,7 @@ import type React from "react";
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
-import { SessionAuthProvider } from "@/components/session-provider"; // <-- this is the wrapper we defined
+import { SessionAuthProvider } from "@/components/session-provider";
 
 export const metadata: Metadata = {
   title: "TURBO Dashboard",
