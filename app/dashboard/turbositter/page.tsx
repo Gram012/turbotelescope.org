@@ -316,13 +316,13 @@ export default function TurboSitterPage() {
                       </button>
                     </div>
                     <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-100 relative aspect-video">
-                      {imageLoading && !centralAxisImage ? (
+                      {imageLoading && !latestImage ? (
                         <div className="absolute inset-0 flex items-center justify-center text-slate-500">
                           Loading...
                         </div>
-                      ) : centralAxisImage ? (
+                      ) : latestImage ? (
                         <img
-                          src={centralAxisImage}
+                          src={latestImage}
                           alt="Latest site camera capture"
                           className="w-full h-full object-contain"
                         />
