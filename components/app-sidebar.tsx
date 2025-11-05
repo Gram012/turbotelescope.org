@@ -61,7 +61,7 @@ const navigationItems: NavItem[] = [
   },
   {
     title: "SkyPortal",
-    url: "http://wicapi.spa.umn.edu",
+    url: "https://wicapi.spa.umn.edu",
     icon: Shell,
     external: true,
   },
@@ -107,28 +107,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {filteredNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  {item.external && item.title === "Image Health Website" ? (
-                    <SidebarMenuButton
-                      asChild
-                      onClick={async (e) => {
-                        e.preventDefault(); // prevent default navigation
-
-                        const response = await fetch("/api/check-campus");
-                        const data = await response.json();
-
-                        if (data.reachable) {
-                          window.open(item.url, "_blank");
-                        } else {
-                          window.location.href = "/on-campus-required";
-                        }
-                      }}
-                    >
-                      <span className="flex items-center space-x-2">
-                        <item.icon className="w-4 h-4" />
-                        <span>{item.title}</span>
-                      </span>
-                    </SidebarMenuButton>
-                  ) : item.external ? (
+                  {item.external ? (
                     <SidebarMenuButton asChild>
                       <a
                         href={item.url}
