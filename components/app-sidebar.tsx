@@ -38,11 +38,29 @@ import { useMemo } from "react";
 
 type NavItem = { title: string; url: string; icon: any; external?: boolean };
 
+async function canReach(url: string, timeout = 3000): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+
+    // Try a HEAD request or GET (HEAD is lighter)
+    const response = await fetch(url, {
+      method: "HEAD",
+      mode: "no-cors", // prevents CORS errors from breaking
+      signal: controller.signal,
+    });
+    clearTimeout(id);
+    return true; // if fetch completes, consider it reachable
+  } catch {
+    return false;
+  }
+}
+
 const navigationItems: NavItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   {
     title: "Image Health Website",
-    url: "https://ihw.turbotelescope.org",
+    url: "http://wicapi.spa.umn.edu:5002",
     icon: BarChart3,
     external: true,
   },
@@ -107,7 +125,26 @@ export function AppSidebar() {
             <SidebarMenu>
               {filteredNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  {item.external ? (
+                  {item.external && item.title === "Image Health Website" ? (
+                    <SidebarMenuButton
+                      asChild
+                      onClick={async (e) => {
+                        e.preventDefault(); // prevent default navigation
+
+                        const reachable = await canReach(item.url);
+                        if (reachable) {
+                          window.open(item.url, "_blank");
+                        } else {
+                          window.location.href = "/on-campus-required";
+                        }
+                      }}
+                    >
+                      <span className="flex items-center space-x-2">
+                        <item.icon className="w-4 h-4" />
+                        <span>{item.title}</span>
+                      </span>
+                    </SidebarMenuButton>
+                  ) : item.external ? (
                     <SidebarMenuButton asChild>
                       <a
                         href={item.url}
