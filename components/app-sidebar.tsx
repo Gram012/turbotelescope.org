@@ -38,22 +38,22 @@ import { useMemo } from "react";
 
 type NavItem = { title: string; url: string; icon: any; external?: boolean };
 
-async function canReach(url: string, timeout = 3000): Promise<boolean> {
-  try {
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeout);
+function canReachImage(url: string, timeout = 3000): Promise<boolean> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const timer = setTimeout(() => resolve(false), timeout);
 
-    // Try a HEAD request or GET (HEAD is lighter)
-    const response = await fetch(url, {
-      method: "HEAD",
-      mode: "no-cors", // prevents CORS errors from breaking
-      signal: controller.signal,
-    });
-    clearTimeout(id);
-    return true; // if fetch completes, consider it reachable
-  } catch {
-    return false;
-  }
+    img.onload = () => {
+      clearTimeout(timer);
+      resolve(true);
+    };
+    img.onerror = () => {
+      clearTimeout(timer);
+      resolve(false);
+    };
+
+    img.src = url + "/favicon.ico?" + Date.now(); // add timestamp to avoid cache
+  });
 }
 
 const navigationItems: NavItem[] = [
@@ -131,7 +131,9 @@ export function AppSidebar() {
                       onClick={async (e) => {
                         e.preventDefault(); // prevent default navigation
 
-                        const reachable = await canReach(item.url);
+                        const reachable = await canReachImage(
+                          "http://wicapi.spa.umn.edu:5002"
+                        );
                         if (reachable) {
                           window.open(item.url, "_blank");
                         } else {
