@@ -38,24 +38,6 @@ import { useMemo } from "react";
 
 type NavItem = { title: string; url: string; icon: any; external?: boolean };
 
-function canReachImage(url: string, timeout = 3000): Promise<boolean> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    const timer = setTimeout(() => resolve(false), timeout);
-
-    img.onload = () => {
-      clearTimeout(timer);
-      resolve(true);
-    };
-    img.onerror = () => {
-      clearTimeout(timer);
-      resolve(false);
-    };
-
-    img.src = url + "/favicon.ico?" + Date.now(); // add timestamp to avoid cache
-  });
-}
-
 const navigationItems: NavItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   {
@@ -131,10 +113,10 @@ export function AppSidebar() {
                       onClick={async (e) => {
                         e.preventDefault(); // prevent default navigation
 
-                        const reachable = await canReachImage(
-                          "http://wicapi.spa.umn.edu:5002"
-                        );
-                        if (reachable) {
+                        const response = await fetch("/api/check-campus");
+                        const data = await response.json();
+
+                        if (data.reachable) {
                           window.open(item.url, "_blank");
                         } else {
                           window.location.href = "/on-campus-required";
