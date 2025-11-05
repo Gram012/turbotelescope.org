@@ -42,7 +42,7 @@ const navigationItems: NavItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   {
     title: "Image Health Website",
-    url: "http://wicapi.spa.umn.edu:5002",
+    url: "https://wicapi.spa.umn.edu/ihw/",
     icon: BarChart3,
     external: true,
   },
