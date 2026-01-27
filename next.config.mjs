@@ -9,6 +9,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // basePath: '/tto',
+  // assetPrefix: '/tto',
 }
 
 export default nextConfig
+
+
