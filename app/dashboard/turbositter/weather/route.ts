@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { Client } from "pg";
+import { createClient } from "@/lib/db";
 
 type WeatherRow = {
     clienttransactionid: number | null;
@@ -26,16 +26,7 @@ type WeatherRow = {
 export const dynamic = "force-dynamic";
 
 async function queryLatestWeather(): Promise<WeatherRow | null> {
-    const databaseUrl = process.env.DATABASE_URL;
-    const client = databaseUrl
-        ? new Client({ connectionString: databaseUrl })
-        : new Client({
-            host: process.env.PGHOST || "localhost",
-            port: process.env.PGPORT ? Number(process.env.PGPORT) : 5432,
-            user: process.env.PGUSER || "postgres",
-            password: process.env.PGPASSWORD,
-            database: process.env.PGDATABASE || "postgres",
-        });
+    const client = createClient();
 
     await client.connect();
     try {

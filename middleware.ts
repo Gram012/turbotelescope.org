@@ -1,5 +1,6 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import { SUPER_ADMINS } from "@/lib/authz";
 
 export default withAuth(
     function middleware(req) {
@@ -12,7 +13,7 @@ export default withAuth(
 
         if (path.startsWith("/admin")) {
             const login = (token?.login || "").toLowerCase();
-            const isAdmin = token?.role === "admin" || login === "gram012";
+            const isAdmin = token?.role === "admin" || SUPER_ADMINS.has(login);
             if (!isAdmin) {
                 return NextResponse.redirect(new URL("/unauthorized", req.url));
             }
