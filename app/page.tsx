@@ -1,249 +1,668 @@
-import { Button } from "@/components/ui/button";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { apiUrl } from "@/lib/utils";
 import {
-  ArrowRight,
-  Shield,
-  Users,
-  BarChart3,
-  Zap,
-  Telescope,
+  Activity,
+  Camera,
+  Cloud,
+  RefreshCw,
+  Video,
+  ChevronDown,
+  ChevronRight,
+  Expand,
+  Shrink,
 } from "lucide-react";
-import Link from "next/link";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 
-export default function HomePage() {
+export type WeatherRow = {
+  temperature: number | null;
+  dewpoint: number | null;
+  humidity: number | null;
+  pressure: number | null;
+  windspeed: number | null;
+  windgust: number | null;
+  winddirection: number | null;
+  cloudcover: number | null;
+  rainrate: number | null;
+  skytemp: number | null;
+  skybrightness: number | null;
+  skyquality: number | null;
+  starfwhm: number | null;
+  avgperiod: number | null;
+  servertransactionid: number | null;
+  clienttransactionid: number | null;
+};
+
+type EnclosureData = {
+  filename: string;
+  data: Array<{ key: string; value: any }>;
+};
+
+function fmt(v: number | null | undefined, unit = "") {
+  if (v === null || v === undefined) return "—";
+  const val = Number.isInteger(v)
+    ? (v as number).toString()
+    : (v as number).toFixed(2);
+  return `${val}${unit ? ` ${unit}` : ""}`;
+}
+
+function pct(v: number | null | undefined) {
+  if (v === null || v === undefined) return "—";
+  const p = v > 1 ? v / 100 : v;
+  return `${Math.round(p * 100)}%`;
+}
+
+export default function TurboSitterPage() {
+  const [row, setRow] = useState<WeatherRow | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState<{ [k: string]: boolean }>({
+    north: false,
+    central: false,
+    south: false,
+  });
+  const [latestImage, setLatestImage] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [centralAxisImage, setCentralAxisImage] = useState<string | null>(null);
+  const [centralAxisLoading, setCentralAxisLoading] = useState(false);
+  const [centralAxisUpdated, setCentralAxisUpdated] = useState<Date | null>(
+    null
+  );
+  const [centralEnclosureData, setCentralEnclosureData] = useState<EnclosureData | null>(null);
+  const [centralEnclosureLoading, setCentralEnclosureLoading] = useState(false);
+
+  const fetchWeatherData = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(apiUrl('/api/Boltwood'));
+      const result = await response.json();
+      
+      if (!response.ok || !result.data) {
+        console.error('Error fetching weather data:', result.error);
+        setLoading(false);
+        return;
+      }
+
+      // Helper function to safely convert to number or null
+      const toNumber = (value: any): number | null => {
+        if (value === null || value === undefined) return null;
+        const num = typeof value === 'number' ? value : Number(value);
+        return isNaN(num) ? null : num;
+      };
+
+      // Map the key-value pairs to WeatherRow
+      const dataMap = new Map(result.data.map((item: { key: string; value: any }) => [item.key, item.value]));
+      
+      const weatherRow: WeatherRow = {
+        temperature: toNumber(dataMap.get('temperature')),
+        dewpoint: toNumber(dataMap.get('dewpoint')),
+        humidity: toNumber(dataMap.get('humidity')),
+        pressure: toNumber(dataMap.get('pressure')),
+        windspeed: toNumber(dataMap.get('windspeed')),
+        windgust: toNumber(dataMap.get('windgust')),
+        winddirection: toNumber(dataMap.get('winddirection')),
+        cloudcover: toNumber(dataMap.get('cloudcover')),
+        rainrate: toNumber(dataMap.get('rainrate')),
+        skytemp: toNumber(dataMap.get('skytemp')),
+        skybrightness: toNumber(dataMap.get('skybrightness')),
+        skyquality: toNumber(dataMap.get('skyquality')),
+        starfwhm: toNumber(dataMap.get('starfwhm')),
+        avgperiod: toNumber(dataMap.get('avgperiod')),
+        servertransactionid: toNumber(dataMap.get('servertransactionid')),
+        clienttransactionid: toNumber(dataMap.get('clienttransactionid')),
+      };
+      
+      setRow(weatherRow);
+    } catch (error) {
+      console.error('Error fetching weather data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWeatherData();
+    // Refresh weather data every 5 minutes (300000ms)
+    const interval = setInterval(fetchWeatherData, 300000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchLatestImage = async () => {
+    setImageLoading(true);
+    try {
+      const res = await fetch(apiUrl(`/api/PTZ?ts=${Date.now()}`));
+      const data = await res.json();
+      setLatestImage(data?.url ?? null);
+      setLastUpdated(new Date());
+    } catch (e) {
+      setLatestImage(null);
+    } finally {
+      setImageLoading(false);
+    }
+  };
+
+  const fetchCentralAxisImage = async () => {
+    setCentralAxisLoading(true);
+    try {
+      const res = await fetch(apiUrl(`/api/Axis/Central?ts=${Date.now()}`));
+      const data = await res.json();
+      setCentralAxisImage(data?.url ?? null);
+      setCentralAxisUpdated(new Date());
+    } catch (e) {
+      setCentralAxisImage(null);
+    } finally {
+      setCentralAxisLoading(false);
+    }
+  };
+
+  const fetchCentralEnclosureData = async () => {
+    setCentralEnclosureLoading(true);
+    try {
+      const response = await fetch(apiUrl('/api/Enclosures/Central'));
+      const data = await response.json();
+      setCentralEnclosureData(data);
+      // Debug: log all available keys
+      if (data?.data) {
+        const allKeys = data.data.map((d: any) => d.key);
+        console.log('Available enclosure data keys:', allKeys);
+        const overcurrentKeys = allKeys.filter((k: string) => 
+          k.toLowerCase().includes('overcurrent')
+        );
+        if (overcurrentKeys.length > 0) {
+          console.log('Overcurrent-related keys found:', overcurrentKeys);
+        } else {
+          console.warn('No overcurrent keys found in data');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching central enclosure data:', error);
+    } finally {
+      setCentralEnclosureLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLatestImage();
+    const interval = setInterval(fetchLatestImage, 1800000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    fetchCentralAxisImage();
+    const interval = setInterval(fetchCentralAxisImage, 1800000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    fetchCentralEnclosureData();
+    const interval = setInterval(fetchCentralEnclosureData, 5000) // refresh every 5s
+    return () => clearInterval(interval);
+  }, []);
+
+  const getCentralValue = (key: string): any => {
+    if (!centralEnclosureData) return null;
+    const item = centralEnclosureData.data.find(d => d.key === key);
+    if (item === undefined) {
+      // Debug: log missing keys
+      const allKeys = centralEnclosureData.data.map(d => d.key);
+      if (!allKeys.includes(key)) {
+        console.log(`Key "${key}" not found. Available keys:`, allKeys);
+      }
+    }
+    return item?.value;
+  };
+
+  const enclosures = useMemo(
+    () => [
+      {
+        id: "north",
+        name: "North Enclosure",
+        details: {
+          lid: "Closed",
+          rain: "Dry",
+          eStop: "OK",
+          temp: "—",
+        },
+        monitorSrc: "/feeds/north-monitor.m3u8",
+        mounts: [
+          {
+            name: "North Mount",
+            cams: ["N1 Telescope Cam", "N2 Telescope Cam"],
+          },
+          {
+            name: "South Mount",
+            cams: ["S1 Telescope Cam", "S2 Telescope Cam"],
+          },
+        ],
+      },
+      {
+        id: "central",
+        name: "Central Enclosure",
+        details: {
+          lidA: getCentralValue('RoofAOpening') ? "Opening" : 
+                getCentralValue('RoofAClosing') ? "Closing" : 
+                getCentralValue('RoofAPos') === 0 ? "Closed" : "Open",
+          lidB: getCentralValue('RoofBOpening') ? "Opening" : 
+                getCentralValue('RoofBClosing') ? "Closing" : 
+                getCentralValue('RoofBPos') === 0 ? "Closed" : "Open",
+          roofAPos: getCentralValue('RoofAPos') ?? null,
+          roofBPos: getCentralValue('RoofBPos') ?? null,
+          overcurrentA: (() => {
+            const val = getCentralValue('RoofAOverCurrent');
+            if (val === null || val === undefined) return null;
+            return val === false ? "FALSE" : "TRUE";
+          })(),
+          overcurrentB: (() => {
+            const val = getCentralValue('RoofBOverCurrent');
+            if (val === null || val === undefined) return null;
+            return val === false ? "FALSE" : "TRUE";
+          })(),
+          eStop: getCentralValue('EStop OK') === true ? "OK" : "FAIL",
+        },
+        monitorSrc: "/feeds/central-monitor.m3u8",
+        mounts: [
+          {
+            name: "North Mount",
+            cams: ["N1 Telescope Cam", "N2 Telescope Cam"],
+          },
+          {
+            name: "South Mount",
+            cams: ["S1 Telescope Cam", "S2 Telescope Cam"],
+          },
+        ],
+      },
+      {
+        id: "south",
+        name: "South Enclosure",
+        details: {
+          lid: "Closed",
+          rain: "Dry",
+          eStop: "OK",
+          temp: "—",
+        },
+        monitorSrc: "/feeds/south-monitor.m3u8",
+        mounts: [
+          {
+            name: "North Mount",
+            cams: ["N1 Telescope Cam", "N2 Telescope Cam"],
+          },
+          {
+            name: "South Mount",
+            cams: ["S1 Telescope Cam", "S2 Telescope Cam"],
+          },
+        ],
+      },
+    ],
+    [centralEnclosureData]
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-              <img src="/turboIconB.png" className="text-color-blue-600" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              TURBO Telescope
-            </span>
-          </div>
-          {/* <nav className="hidden md:flex items-center space-x-8">
-            <a
-              href="#features"
-              className="text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              Lorem
-            </a>
-            <a
-              href="#about"
-              className="text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              Ipsum
-            </a>
-            <a
-              href="#contact"
-              className="text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              Dolor
-            </a>
-          </nav> */}
-          <Link href="/signin">
-            <Button
-              variant="outline"
-              className="border-slate-300 hover:bg-slate-50"
-            >
-              Sign In
-            </Button>
-          </Link>
-        </div>
-      </header>
-
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 text-center">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-5xl md:text-6xl font-bold text-slate-900 mb-6 leading-tight">
-            The Home of
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              {" "}
-              Everything{" "}
-            </span>
-            TURBO
-          </h1>
-          <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto leading-relaxed">
-            A place for everyone to learn all there is to know about the TURBO
-            Telescope. A portal for team members to access all of our web
-            applications. All in one place.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/signin">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8"
-              >
-                Access Dashboard
-                <ArrowRight className="ml-2 w-4 h-4" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-              What is TURBO Telescope?
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              The Total-Coverage Ultra-Fast Response to Binary-Mergers
-              Observatory (TURBO) is a collaborative multi messenger astronomy
-              initiative led by the University of Minnesota, in partnership with
-              the University of New Mexico and the University of Crete. TURBO is
-              designed to capture the earliest light from cataclysmic events
-              within seconds of receiving alerts from gravitational wave
-              detectors.
-            </p>
-          </div>
-          {/* TODO: Make Pages for These */}
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center p-6 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Users className="w-6 h-6 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-2">
-                The Team
-              </h3>
-              <p className="text-slate-600">
-                Get to know the people behind the science.
-              </p>
-            </div>
-
-            <div className="text-center p-6 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <BarChart3 className="w-6 h-6 text-purple-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-2">
-                The Data
-              </h3>
-              <p className="text-slate-600">
-                Learn more about what makes TURBO special. See how images are
-                captured, processed, and analyzied.
-              </p>
-            </div>
-
-            <div className="text-center p-6 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Telescope className="w-6 h-6 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-2">
-                The Science
-              </h3>
-              <p className="text-slate-600">
-                Discover what drives our curiosity. Learn more about
-                astronomical transients and how they shape our understanding of
-                the visible universe.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            The Future of Ultra-Fast Astronomy is Here
-          </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Duis aute irure dolor in reprehenderit in voluptate velit esse
-            cillum dolore eu fugiat nulla pariatur.
-          </p>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-slate-900 text-slate-300 py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <img src="/turboIconW.png" className="text-color-blue-600" />
-                </div>
-                <span className="text-xl font-bold text-white">
-                  TURBO Telescope
-                </span>
-              </div>
-              <p className="text-slate-400">
-                Still curious? Check out these links.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-white mb-4">News</h4>
-              <ul className="space-y-2">
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Lorem
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Ipsum
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Dolor
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-white mb-4">Contact</h4>
-              <ul className="space-y-2">
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Email
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://cse.umn.edu/physics"
-                    className="hover:text-white transition-colors"
-                    target="_blank"
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-16 items-center gap-2 border-b px-4">
+          <h1 className="text-lg font-semibold">TURBOSitter</h1>
+        </header>
+        <main className="flex-1 p-4 md:p-6">
+          <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+            <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+              <header className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold text-slate-900">
+                  TURBOSitter
+                </h1>
+                <div className="flex items-center gap-2 text-slate-500">
+                  <button
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-sm hover:bg-slate-50"
+                    onClick={() =>
+                      setOpen({ north: true, central: true, south: true })
+                    }
                   >
-                    UofM SPA
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    UNM
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-white mb-4">Irure</h4>
-              <ul className="space-y-2">
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Lorem
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Ipsum
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Dolor
-                  </a>
-                </li>
-              </ul>
+                    <Expand className="w-4 h-4" /> Expand all
+                  </button>
+                  <button
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-sm hover:bg-slate-50"
+                    onClick={() =>
+                      setOpen({ north: false, central: false, south: false })
+                    }
+                  >
+                    <Shrink className="w-4 h-4" /> Collapse all
+                  </button>
+                </div>
+              </header>
+
+              {/* Top row: Weather + Site Cam + Bot */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Weather Card */}
+                <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden min-h-[28rem] p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                      <Cloud className="w-5 h-5 text-blue-600" /> Latest Weather
+                      Data
+                    </h2>
+                    <button
+                      onClick={fetchWeatherData}
+                      disabled={loading}
+                      className="inline-flex items-center gap-2 border border-slate-200 px-3 py-1.5 rounded-xl text-sm hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+                    </button>
+                  </div>
+                  {loading ? (
+                    <div className="text-slate-500">Loading…</div>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <KV
+                        label="Air Temp"
+                        value={fmt(row?.temperature, "°C")}
+                      />
+                      <KV label="Dew Point" value={fmt(row?.dewpoint, "°C")} />
+                      <KV label="Humidity" value={pct(row?.humidity)} />
+                      <KV label="Pressure" value={fmt(row?.pressure, "hPa")} />
+                      <KV
+                        label="Wind Speed"
+                        value={fmt(row?.windspeed, "m/s")}
+                      />
+                      <KV label="Wind Gust" value={fmt(row?.windgust, "m/s")} />
+                      <KV
+                        label="Wind Dir"
+                        value={fmt(row?.winddirection, "°")}
+                      />
+                      <KV label="Cloud Cover" value={pct(row?.cloudcover)} />
+                      <KV
+                        label="Rain Rate"
+                        value={fmt(row?.rainrate, "mm/hr")}
+                      />
+                      <KV label="Sky Temp" value={fmt(row?.skytemp, "°C")} />
+                      <KV
+                        label="Sky Brightness"
+                        value={fmt(row?.skybrightness, "mag/arcsec²")}
+                      />
+                      <KV label="Sky Quality" value={fmt(row?.skyquality)} />
+                      <KV
+                        label="Star FWHM"
+                        value={fmt(row?.starfwhm, "arcsec")}
+                      />
+                      <KV label="Avg Period" value={fmt(row?.avgperiod, "s")} />
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Column — perfectly matched height */}
+                <div className="flex flex-col gap-6">
+                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5">
+                    <div className="flex items-center justify-between mb-2">
+                      <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                        <Camera className="w-5 h-5 text-green-600" /> General
+                        Site Camera
+                      </h2>
+                      <button
+                        onClick={fetchLatestImage}
+                        disabled={imageLoading}
+                        className="inline-flex items-center gap-2 border border-slate-200 px-2 py-1 rounded-lg text-xs hover:bg-slate-50 disabled:opacity-50"
+                      >
+                        <RefreshCw
+                          className={`w-3 h-3 ${
+                            imageLoading ? "animate-spin" : ""
+                          }`}
+                        />
+                        Refresh
+                      </button>
+                    </div>
+                    <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-100 relative aspect-video">
+                      {imageLoading && !latestImage ? (
+                        <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+                          Loading...
+                        </div>
+                      ) : latestImage ? (
+                        <img
+                          src={latestImage}
+                          alt="Latest site camera capture"
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+                          No image available
+                        </div>
+                      )}
+                    </div>
+                    {lastUpdated && (
+                      <div className="text-xs text-slate-500 mt-2">
+                        Last updated: {lastUpdated.toLocaleTimeString()}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5 flex flex-col">
+                    <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2 mb-2">
+                      <Activity className="w-5 h-5 text-indigo-600" />{" "}
+                      TURBOSitter Bot Readout
+                    </h2>
+                    <div className="rounded-xl border border-slate-200 p-4 flex-1 min-h-0 overflow-auto">
+                      <ul className="text-sm text-slate-700 space-y-2">
+                        <li>
+                          <span className="font-medium">Status:</span> Nominal
+                        </li>
+                        <li>
+                          <span className="font-medium">Last Poll:</span> —
+                        </li>
+                        <li>
+                          <span className="font-medium">Active Alerts:</span>{" "}
+                          None
+                        </li>
+                        <li>
+                          <span className="font-medium">Recent Events:</span>
+                          <ul className="ml-4 list-disc">
+                            <li>—</li>
+                            <li>—</li>
+                          </ul>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Enclosures */}
+              <div className="space-y-6">
+                {enclosures.map((enc) => (
+                  <div
+                    key={enc.id}
+                    className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden"
+                  >
+                    <button
+                      onClick={() =>
+                        setOpen((s) => ({ ...s, [enc.id]: !s[enc.id] }))
+                      }
+                      className="w-full flex items-center justify-between px-5 py-4 border-b border-slate-100 hover:bg-slate-50"
+                    >
+                      <div className="flex items-center gap-2">
+                        {open[enc.id] ? (
+                          <ChevronDown className="w-5 h-5 text-indigo-600" />
+                        ) : (
+                          <ChevronRight className="w-5 h-5 text-indigo-600" />
+                        )}
+                        <h2 className="text-lg font-semibold text-slate-900">
+                          {enc.name}
+                        </h2>
+                      </div>
+                      <span className="text-sm text-slate-500">
+                        {open[enc.id] ? "Hide" : "Show"} Detailed View
+                      </span>
+                    </button>
+
+                    {enc.id === "central" ? (
+                      <div className="px-5 py-4 space-y-4">
+                        {/* Row 1: A items */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                          <Badge label="Roof A" value={enc.details.lidA || "—"} />
+                          <Badge
+                            label="Roof A Pos"
+                            value={enc.details.roofAPos !== null && enc.details.roofAPos !== undefined ? enc.details.roofAPos.toString() : "—"}
+                          />
+                          <Badge
+                            label="Overcurrent A"
+                            value={enc.details.overcurrentA || "—"}
+                            status={enc.details.overcurrentA === "FALSE" ? "ok" : enc.details.overcurrentA === "TRUE" ? "fail" : undefined}
+                          />
+                        </div>
+                        {/* Row 2: B items */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                          <Badge label="Roof B" value={enc.details.lidB || "—"} />
+                          <Badge
+                            label="Roof B Pos"
+                            value={enc.details.roofBPos !== null && enc.details.roofBPos !== undefined ? enc.details.roofBPos.toString() : "—"}
+                          />
+                          <Badge
+                            label="Overcurrent B"
+                            value={enc.details.overcurrentB || "—"}
+                            status={enc.details.overcurrentB === "FALSE" ? "ok" : enc.details.overcurrentB === "TRUE" ? "fail" : undefined}
+                          />
+                        </div>
+                        {/* Row 3: EStop */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                          <Badge
+                            label="EStop"
+                            value={enc.details.eStop || "—"}
+                            status={enc.details.eStop === "OK" ? "ok" : enc.details.eStop === "FAIL" ? "fail" : undefined}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="px-5 py-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <Badge label="Lid" value={enc.details.lid || "—"} />
+                        <Badge label="Rain" value={enc.details.rain || "—"} />
+                        <Badge
+                          label="EStop"
+                          value={enc.details.eStop || "—"}
+                          status={enc.details.eStop === "OK" ? "ok" : enc.details.eStop === "FAIL" ? "fail" : undefined}
+                        />
+                        <Badge
+                          label="Internal Temp"
+                          value={enc.details.temp || "—"}
+                        />
+                      </div>
+                    )}
+
+                    {open[enc.id] && (
+                      <div className="px-5 pb-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-4">
+                          {enc.mounts.map((m) => (
+                            <div
+                              key={m.name}
+                              className="rounded-xl border border-slate-200"
+                            >
+                              <div className="px-4 py-2 border-b border-slate-100 font-medium text-slate-800">
+                                {m.name}
+                              </div>
+                              <ul className="divide-y divide-slate-100">
+                                {m.cams.map((c) => (
+                                  <li
+                                    key={c}
+                                    className="px-4 py-2 text-sm text-slate-700 flex items-center gap-2"
+                                  >
+                                    <Camera className="w-4 h-4 text-slate-400" />{" "}
+                                    {c}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="rounded-xl overflow-hidden border border-slate-200 flex flex-col">
+                          {enc.id === "central" ? (
+                            <>
+                              <div className="flex items-center justify-between px-4 py-2 border-b border-slate-100">
+                                <div className="text-sm font-medium text-slate-800">
+                                  {enc.name} Monitor
+                                </div>
+                                <button
+                                  onClick={fetchCentralAxisImage}
+                                  disabled={centralAxisLoading}
+                                  className="inline-flex items-center gap-2 border border-slate-200 px-2 py-1 rounded-lg text-xs hover:bg-slate-50 disabled:opacity-50"
+                                >
+                                  <RefreshCw
+                                    className={`w-3 h-3 ${
+                                      centralAxisLoading ? "animate-spin" : ""
+                                    }`}
+                                  />
+                                  Refresh
+                                </button>
+                              </div>
+                              <div className="bg-slate-100 flex items-center justify-center aspect-video relative">
+                                {centralAxisLoading && !centralAxisImage ? (
+                                  <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+                                    Loading...
+                                  </div>
+                                ) : centralAxisImage ? (
+                                  <img
+                                    src={centralAxisImage}
+                                    alt="Central enclosure camera"
+                                    className="w-full h-full object-contain"
+                                  />
+                                ) : (
+                                  <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+                                    No image available
+                                  </div>
+                                )}
+                              </div>
+                              {centralAxisUpdated && (
+                                <div className="text-xs text-slate-500 px-4 py-2 border-t border-slate-100">
+                                  Last updated:{" "}
+                                  {centralAxisUpdated.toLocaleTimeString()}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <div className="bg-slate-100 flex items-center justify-center h-48">
+                                <video className="w-full h-full" controls muted>
+                                  <source
+                                    src={enc.monitorSrc}
+                                    type="application/vnd.apple.mpegurl"
+                                  />
+                                </video>
+                              </div>
+                              <div className="px-4 py-2 border-t border-slate-100 text-sm text-slate-700">
+                                {enc.name} Monitor
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-          <div className="border-t border-slate-800 mt-8 pt-8 text-center">
-            <p className="text-slate-400">...</p>
-          </div>
-        </div>
-      </footer>
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}
+
+function KV({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-xl border border-slate-200 p-3">
+      <div className="text-xs text-slate-500">{label}</div>
+      <div className="mt-1 text-xl font-semibold text-slate-900">{value}</div>
+    </div>
+  );
+}
+
+function Badge({ label, value, status }: { label: string; value: string; status?: "ok" | "fail" }) {
+  const statusClasses = status === "ok" 
+    ? "bg-green-50 border-green-200 text-green-700" 
+    : status === "fail" 
+    ? "bg-red-50 border-red-200 text-red-700" 
+    : "bg-slate-50 border-slate-200 text-slate-700";
+  
+  return (
+    <div className={`flex items-center justify-between text-sm border rounded-lg px-3 py-1 ${statusClasses}`}>
+      <span>{label}</span>
+      <span className="font-medium">{value}</span>
     </div>
   );
 }

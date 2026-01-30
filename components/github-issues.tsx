@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { apiUrl } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -47,7 +48,7 @@ export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
   useEffect(() => {
     async function fetchIssues() {
       try {
-        const res = await fetch(`/api/github-issues`, {
+        const res = await fetch(apiUrl("/api/github-issues"), {
           credentials: "include",
         });
         if (!res.ok) {
@@ -104,7 +105,7 @@ export function GitHubIssues({ owner, repo, limit = 100 }: GitHubIssuesProps) {
 
     const timeoutId = window.setTimeout(async () => {
       try {
-        const res = await fetch(`/api/github-issues/close`, {
+        const res = await fetch(apiUrl("/api/github-issues/close"), {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },

@@ -2,7 +2,6 @@ import type React from "react";
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
-import { SessionAuthProvider } from "@/components/session-provider";
 
 export const metadata: Metadata = {
   title: "TURBO Dashboard",
@@ -18,10 +17,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <SessionAuthProvider>
-          {children}
-          <Toaster />
-        </SessionAuthProvider>
+        {children}
+        <Toaster />
       </body>
     </html>
   );

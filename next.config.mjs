@@ -1,5 +1,12 @@
 /** @type {import('next').NextConfig} */
+const basePath = '/sitter';
 const nextConfig = {
+  basePath,
+  assetPrefix: basePath,
+  env: { NEXT_PUBLIC_BASE_PATH: basePath },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -9,8 +16,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // basePath: '/tto',
-  // assetPrefix: '/tto',
 }
 
 export default nextConfig

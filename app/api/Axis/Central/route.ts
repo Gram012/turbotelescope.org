@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { getVar } from "@/lib/var";
 
-const IMAGE_DIR = getVar('PTZ');
+const IMAGE_DIR = getVar('AXIS_CAM.T2');
 const MAX_IMAGES = 5;
 
 export async function GET() {

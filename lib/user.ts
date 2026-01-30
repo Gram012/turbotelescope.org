@@ -68,6 +68,17 @@ export async function setUserRole(login: string, role: "user" | "admin"): Promis
   );
 }
 
+export async function setUserActive(login: string, is_active: boolean): Promise<DBUser | null> {
+  const result = await pool.query<DBUser>(
+    `UPDATE user_data.users
+     SET is_active = $1
+     WHERE github_login = $2
+     RETURNING id, github_id, github_login, name, email, avatar_url, role, is_active, created_at, last_login_at`,
+    [is_active, login.toLowerCase()]
+  );
+  return result.rows[0] ?? null;
+}
+
 /** Soft-remove: mark as inactive (recommended default) */
 export async function deactivateUser(login: string): Promise<void> {
   await pool.query(

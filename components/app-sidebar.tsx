@@ -13,40 +13,26 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   BarChart3,
-  Users,
   Settings,
   KeyIcon,
   Shell,
   HardDrive,
-  ChevronUp,
-  LogOut,
-  LayoutDashboard,
   ScanEye,
 } from "lucide-react";
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
-import { useMemo } from "react";
+import { apiUrl } from "@/lib/utils";
 
 type NavItem = { title: string; url: string; icon: any; external?: boolean };
 
 const navigationItems: NavItem[] = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   {
     title: "Image Health Website",
-    url: "https://wicapi.spa.umn.edu/ihw/",
+    url: "https://tayamni.spa.umn.edu/ihw",
     icon: BarChart3,
     external: true,
   },
-  { title: "Team Members", url: "/dashboard/users", icon: Users },
   {
     title: "WAZ",
     url: "https://spa-u-waziyata.spa.umn.edu/login",
@@ -61,7 +47,7 @@ const navigationItems: NavItem[] = [
   },
   {
     title: "SkyPortal",
-    url: "https://wicapi.spa.umn.edu",
+    url: "https://tayamni.spa.umn.edu/",
     icon: Shell,
     external: true,
   },
@@ -73,26 +59,12 @@ const settingsItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
-  const { data: session } = useSession();
-  const role = (session?.user as any)?.role ?? "user";
-  const login = ((session?.user as any)?.login || "").toLowerCase();
-  const isAdmin = role === "admin" || login === "gram012";
-
-  const filteredNav = useMemo(
-    () => navigationItems.filter((i) => !(i.title === "BitWarden" && !isAdmin)),
-    [isAdmin]
-  );
-
-  const displayName =
-    session?.user?.name || (session?.user as any)?.login || "User";
-  const avatar = (session?.user as any)?.image ?? "/placeholder-user.jpg";
-
   return (
     <Sidebar>
       <SidebarHeader>
         <div className="flex items-center space-x-2 px-2 py-2">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-            <img src="/turboIconB.png" alt="TURBO Logo" />
+            <img src={apiUrl("/turboIconB.png")} alt="TURBO Logo" />
           </div>
           <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             <Link href="/">TURBO Telescope</Link>
@@ -105,7 +77,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {filteredNav.map((item) => (
+              {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {item.external ? (
                     <SidebarMenuButton asChild>
@@ -151,7 +123,7 @@ export function AppSidebar() {
         </SidebarGroup> */}
       </SidebarContent>
 
-      <SidebarFooter>
+      {/* <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
@@ -187,7 +159,7 @@ export function AppSidebar() {
             </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
-      </SidebarFooter>
+      </SidebarFooter> */}
 
       <SidebarRail />
     </Sidebar>
