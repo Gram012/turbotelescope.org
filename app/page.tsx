@@ -62,14 +62,34 @@ export default function TurboSitterPage() {
     central: false,
     south: false,
   });
-  const [latestImage, setLatestImage] = useState<string | null>(null);
-  const [imageLoading, setImageLoading] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  // PTZ
+  const [ptzImage, setPTZimage] = useState<string | null>(null);
+  const [ptzImageLoading, setPTZimageLoading] = useState(false);
+  const [ptzLastUpdated, setPTZLastUpdated] = useState<Date | null>(null);
+
+  // North Cam
+  const [northAxisImage, setNorthAxisImage] = useState<string | null>(null);
+  const [northAxisLoading, setNorthAxisLoading] = useState(false);
+  const [northAxisUpdated, setNorthAxisUpdated] = useState<Date | null>(
+    null
+  );
+
+  // Central Cam
   const [centralAxisImage, setCentralAxisImage] = useState<string | null>(null);
   const [centralAxisLoading, setCentralAxisLoading] = useState(false);
   const [centralAxisUpdated, setCentralAxisUpdated] = useState<Date | null>(
     null
   );
+
+  // South Cam
+  const [southAxisImage, setSouthAxisImage] = useState<string | null>(null);
+  const [southAxisLoading, setSouthAxisLoading] = useState(false);
+  const [southAxisUpdated, setSouthAxisUpdated] = useState<Date | null>(
+    null
+  );
+
+  //Central Enclosure Data
   const [centralEnclosureData, setCentralEnclosureData] = useState<EnclosureData | null>(null);
   const [centralEnclosureLoading, setCentralEnclosureLoading] = useState(false);
 
@@ -129,17 +149,31 @@ export default function TurboSitterPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const fetchLatestImage = async () => {
-    setImageLoading(true);
+  const fetchPTZimage = async () => {
+    setPTZimageLoading(true);
     try {
       const res = await fetch(apiUrl(`/api/PTZ?ts=${Date.now()}`));
       const data = await res.json();
-      setLatestImage(data?.url ?? null);
-      setLastUpdated(new Date());
+      setPTZimage(data?.url ?? null);
+      setPTZLastUpdated(new Date());
     } catch (e) {
-      setLatestImage(null);
+      setPTZimage(null);
     } finally {
-      setImageLoading(false);
+      setPTZimageLoading(false);
+    }
+  }; 
+
+    const fetchNorthAxisImage = async () => {
+    setNorthAxisLoading(true);
+    try {
+      const res = await fetch(apiUrl(`/api/Axis/North?ts=${Date.now()}`));
+      const data = await res.json();
+      setNorthAxisImage(data?.url ?? null);
+      setNorthAxisUpdated(new Date());
+    } catch (e) {
+      setNorthAxisImage(null);
+    } finally {
+      setNorthAxisLoading(false);
     }
   };
 
@@ -154,6 +188,20 @@ export default function TurboSitterPage() {
       setCentralAxisImage(null);
     } finally {
       setCentralAxisLoading(false);
+    }
+  };
+
+    const fetchSouthAxisImage = async () => {
+    setSouthAxisLoading(true);
+    try {
+      const res = await fetch(apiUrl(`/api/Axis/South?ts=${Date.now()}`));
+      const data = await res.json();
+      setSouthAxisImage(data?.url ?? null);
+      setSouthAxisUpdated(new Date());
+    } catch (e) {
+      setSouthAxisImage(null);
+    } finally {
+      setSouthAxisLoading(false);
     }
   };
 
@@ -184,14 +232,26 @@ export default function TurboSitterPage() {
   };
 
   useEffect(() => {
-    fetchLatestImage();
-    const interval = setInterval(fetchLatestImage, 1800000);
+    fetchPTZimage();
+    const interval = setInterval(fetchPTZimage, 300000); // refresh every 5 min
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    fetchNorthAxisImage();
+    const interval = setInterval(fetchNorthAxisImage, 300000);
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     fetchCentralAxisImage();
-    const interval = setInterval(fetchCentralAxisImage, 1800000);
+    const interval = setInterval(fetchCentralAxisImage, 300000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    fetchSouthAxisImage();
+    const interval = setInterval(fetchSouthAxisImage, 300000);
     return () => clearInterval(interval);
   }, []);
 
@@ -389,7 +449,7 @@ export default function TurboSitterPage() {
                   )}
                 </div>
 
-                {/* Right Column — perfectly matched height */}
+                {/* Right Column */}
                 <div className="flex flex-col gap-6">
                   <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-5">
                     <div className="flex items-center justify-between mb-2">
@@ -398,26 +458,26 @@ export default function TurboSitterPage() {
                         Site Camera
                       </h2>
                       <button
-                        onClick={fetchLatestImage}
-                        disabled={imageLoading}
+                        onClick={fetchPTZimage}
+                        disabled={ptzImageLoading}
                         className="inline-flex items-center gap-2 border border-slate-200 px-2 py-1 rounded-lg text-xs hover:bg-slate-50 disabled:opacity-50"
                       >
                         <RefreshCw
                           className={`w-3 h-3 ${
-                            imageLoading ? "animate-spin" : ""
+                            ptzImageLoading ? "animate-spin" : ""
                           }`}
                         />
                         Refresh
                       </button>
                     </div>
                     <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-100 relative aspect-video">
-                      {imageLoading && !latestImage ? (
+                      {ptzImageLoading && !ptzImage ? (
                         <div className="absolute inset-0 flex items-center justify-center text-slate-500">
                           Loading...
                         </div>
-                      ) : latestImage ? (
+                      ) : ptzImage ? (
                         <img
-                          src={latestImage}
+                          src={ptzImage}
                           alt="Latest site camera capture"
                           className="w-full h-full object-contain"
                         />
@@ -427,9 +487,9 @@ export default function TurboSitterPage() {
                         </div>
                       )}
                     </div>
-                    {lastUpdated && (
+                    {ptzLastUpdated && (
                       <div className="text-xs text-slate-500 mt-2">
-                        Last updated: {lastUpdated.toLocaleTimeString()}
+                        Last updated: {ptzLastUpdated.toLocaleTimeString()}
                       </div>
                     )}
                   </div>
@@ -571,7 +631,55 @@ export default function TurboSitterPage() {
                           ))}
                         </div>
                         <div className="rounded-xl overflow-hidden border border-slate-200 flex flex-col">
-                          {enc.id === "central" ? (
+                          {enc.id === "north" ? (
+                            <>
+                              <div className="flex items-center justify-between px-4 py-2 border-b border-slate-100">
+                                <div className="text-sm font-medium text-slate-800">
+                                  {enc.name} Monitor
+                                </div>
+                                <button
+                                  onClick={fetchNorthAxisImage}
+                                  disabled={northAxisLoading}
+                                  className="inline-flex items-center gap-2 border border-slate-200 px-2 py-1 rounded-lg text-xs hover:bg-slate-50 disabled:opacity-50"
+                                >
+                                  <RefreshCw
+                                    className={`w-3 h-3 ${
+                                      northAxisLoading ? "animate-spin" : ""
+                                    }`}
+                                  />
+                                  Refresh
+                                </button>
+                              </div>
+                              <div className="bg-slate-100 flex items-center justify-center aspect-video relative">
+                                {northAxisLoading && !northAxisImage ? (
+                                  <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+                                    Loading...
+                                  </div>
+                                ) : northAxisImage ? (
+                                  <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                                    <div className="aspect-square h-full overflow-hidden flex items-center justify-center">
+                                      <img
+                                        src={northAxisImage}
+                                        alt="North enclosure camera"
+                                        style={{ transform: "rotate(90deg)" }}
+                                        className="h-full w-full object-contain"
+                                      />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+                                    No image available
+                                  </div>
+                                )}
+                              </div>
+                              {northAxisUpdated && (
+                                <div className="text-xs text-slate-500 px-4 py-2 border-t border-slate-100">
+                                  Last updated:{" "}
+                                  {northAxisUpdated.toLocaleTimeString()}
+                                </div>
+                              )}
+                            </>
+                          ) : enc.id === "central" ? (
                             <>
                               <div className="flex items-center justify-between px-4 py-2 border-b border-slate-100">
                                 <div className="text-sm font-medium text-slate-800">
@@ -614,21 +722,55 @@ export default function TurboSitterPage() {
                                 </div>
                               )}
                             </>
-                          ) : (
+                          ) : enc.id === "south" ? (
                             <>
-                              <div className="bg-slate-100 flex items-center justify-center h-48">
-                                <video className="w-full h-full" controls muted>
-                                  <source
-                                    src={enc.monitorSrc}
-                                    type="application/vnd.apple.mpegurl"
+                              <div className="flex items-center justify-between px-4 py-2 border-b border-slate-100">
+                                <div className="text-sm font-medium text-slate-800">
+                                  {enc.name} Monitor
+                                </div>
+                                <button
+                                  onClick={fetchSouthAxisImage}
+                                  disabled={southAxisLoading}
+                                  className="inline-flex items-center gap-2 border border-slate-200 px-2 py-1 rounded-lg text-xs hover:bg-slate-50 disabled:opacity-50"
+                                >
+                                  <RefreshCw
+                                    className={`w-3 h-3 ${
+                                      southAxisLoading ? "animate-spin" : ""
+                                    }`}
                                   />
-                                </video>
+                                  Refresh
+                                </button>
                               </div>
-                              <div className="px-4 py-2 border-t border-slate-100 text-sm text-slate-700">
-                                {enc.name} Monitor
+                              <div className="bg-slate-100 flex items-center justify-center aspect-video relative">
+                                {southAxisLoading && !southAxisImage ? (
+                                  <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+                                    Loading...
+                                  </div>
+                                ) : southAxisImage ? (
+                                  <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                                    <div className="aspect-square h-full overflow-hidden flex items-center justify-center">
+                                      <img
+                                        src={southAxisImage}
+                                        alt="South enclosure camera"
+                                        style={{ transform: "rotate(90deg)" }}
+                                        className="h-full w-full object-contain"
+                                      />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+                                    No image available
+                                  </div>
+                                )}
                               </div>
+                              {southAxisUpdated && (
+                                <div className="text-xs text-slate-500 px-4 py-2 border-t border-slate-100">
+                                  Last updated:{" "}
+                                  {southAxisUpdated.toLocaleTimeString()}
+                                </div>
+                              )}
                             </>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                     )}

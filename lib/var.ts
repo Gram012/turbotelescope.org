@@ -2,9 +2,9 @@ export const varObj = {
     BW_DATA: "/home/turbo/web-services/new-mexico/boltwood",
     PTZ: "/home/turbo/web-services/new-mexico/PTZ",
     AXIS_CAM: {
-        T1: "/home/turbo/web-services/new-mexico/north-enclosure/axis-cam",
-        T2: "/home/turbo/web-services/new-mexico/central-enclosure/axis-cam",
-        T3: "/home/turbo/web-services/new-mexico/south-enclosure/axis-cam",
+        T3: "/home/turbo/web-services/new-mexico/north-enclosure/axis-cam",
+        T1: "/home/turbo/web-services/new-mexico/central-enclosure/axis-cam",
+        T2: "/home/turbo/web-services/new-mexico/south-enclosure/axis-cam",
     },
     ENC_DATA: {
         T1: "/home/turbo/web-services/new-mexico/north-enclosure/data",

@@ -51,7 +51,7 @@ const navigationItems: NavItem[] = [
     icon: Shell,
     external: true,
   },
-  { title: "Turbositter", url: "/dashboard/turbositter", icon: ScanEye },
+  { title: "Turbositter", url: "/sitter", icon: ScanEye },
 ];
 
 const settingsItems: NavItem[] = [
