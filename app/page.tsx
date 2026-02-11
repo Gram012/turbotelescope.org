@@ -523,7 +523,7 @@ export default function TurboSitterPage() {
                       <KV label="Sky Temp" value={fmt(row?.skytemp, "°C")} />
                       <KV
                         label="Sky Brightness"
-                        value={fmt(row?.skybrightness, "mag/arcsec²")}
+                        value={fmt(row?.skybrightness, "lux")}
                       />
                       <KV label="Sky Quality" value={fmt(row?.skyquality)} />
                       <KV
