@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { getVar } from "@/lib/var";
 
-const DATA_DIR = getVar('ENC_DATA.T1');
+const DATA_DIR = getVar('ENC_DATA.T2');
 const MAX_FILES = 5;
 
 export async function GET() {

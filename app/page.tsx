@@ -67,6 +67,7 @@ export default function TurboSitterPage() {
   const [ptzImage, setPTZimage] = useState<string | null>(null);
   const [ptzImageLoading, setPTZimageLoading] = useState(false);
   const [ptzLastUpdated, setPTZLastUpdated] = useState<Date | null>(null);
+  const [ptzLightboxOpen, setPtzLightboxOpen] = useState(false);
 
   // North Cam
   const [northAxisImage, setNorthAxisImage] = useState<string | null>(null);
@@ -89,9 +90,16 @@ export default function TurboSitterPage() {
     null
   );
 
+  // Enclosure image lightbox (north / central / south); rotate90 for north/south
+  const [enclosureLightbox, setEnclosureLightbox] = useState<{ url: string; rotate90: boolean } | null>(null);
+
   //Central Enclosure Data
   const [centralEnclosureData, setCentralEnclosureData] = useState<EnclosureData | null>(null);
   const [centralEnclosureLoading, setCentralEnclosureLoading] = useState(false);
+
+  //South Enclosure Data
+  const [southEnclosureData, setSouthEnclosureData] = useState<EnclosureData | null>(null);
+  const [southEnclosureLoading, setSouthEnclosureLoading] = useState(false);
 
   const fetchWeatherData = async () => {
     setLoading(true);
@@ -214,14 +222,14 @@ export default function TurboSitterPage() {
       // Debug: log all available keys
       if (data?.data) {
         const allKeys = data.data.map((d: any) => d.key);
-        console.log('Available enclosure data keys:', allKeys);
+        console.log('Available central enclosure data keys:', allKeys);
         const overcurrentKeys = allKeys.filter((k: string) => 
           k.toLowerCase().includes('overcurrent')
         );
         if (overcurrentKeys.length > 0) {
-          console.log('Overcurrent-related keys found:', overcurrentKeys);
+          console.log('Central overcurrent-related keys found:', overcurrentKeys);
         } else {
-          console.warn('No overcurrent keys found in data');
+          console.warn('No central overcurrent keys found in data');
         }
       }
     } catch (error) {
@@ -231,27 +239,71 @@ export default function TurboSitterPage() {
     }
   };
 
+  const fetchSouthEnclosureData = async () => {
+    setSouthEnclosureLoading(true);
+    try {
+      const response = await fetch(apiUrl('/api/Enclosures/South'));
+      const data = await response.json();
+      setSouthEnclosureData(data);
+      // Debug: log all available keys
+      if (data?.data) {
+        const allKeys = data.data.map((d: any) => d.key);
+        console.log('Available south enclosure data keys:', allKeys);
+      }
+    } catch (error) {
+      console.error('Error fetching south enclosure data:', error);
+    } finally {
+      setSouthEnclosureLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchPTZimage();
-    const interval = setInterval(fetchPTZimage, 300000); // refresh every 5 min
+    const interval = setInterval(fetchPTZimage, 60000); // refresh every 1 min
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
+    if (!ptzLightboxOpen) return;
+    const onEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPtzLightboxOpen(false);
+    };
+    window.addEventListener("keydown", onEscape);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onEscape);
+      document.body.style.overflow = "";
+    };
+  }, [ptzLightboxOpen]);
+
+  useEffect(() => {
+    if (!enclosureLightbox) return;
+    const onEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setEnclosureLightbox(null);
+    };
+    window.addEventListener("keydown", onEscape);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onEscape);
+      document.body.style.overflow = "";
+    };
+  }, [enclosureLightbox]);
+
+  useEffect(() => {
     fetchNorthAxisImage();
-    const interval = setInterval(fetchNorthAxisImage, 300000);
+    const interval = setInterval(fetchNorthAxisImage, 60000); // refresh every 5s
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     fetchCentralAxisImage();
-    const interval = setInterval(fetchCentralAxisImage, 300000);
+    const interval = setInterval(fetchCentralAxisImage, 60000);
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     fetchSouthAxisImage();
-    const interval = setInterval(fetchSouthAxisImage, 300000);
+    const interval = setInterval(fetchSouthAxisImage, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -261,12 +313,31 @@ export default function TurboSitterPage() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    fetchSouthEnclosureData();
+    const interval = setInterval(fetchSouthEnclosureData, 5000) // refresh every 5s
+    return () => clearInterval(interval);
+  }, []);
+
   const getCentralValue = (key: string): any => {
     if (!centralEnclosureData) return null;
     const item = centralEnclosureData.data.find(d => d.key === key);
     if (item === undefined) {
       // Debug: log missing keys
       const allKeys = centralEnclosureData.data.map(d => d.key);
+      if (!allKeys.includes(key)) {
+        console.log(`Key "${key}" not found. Available keys:`, allKeys);
+      }
+    }
+    return item?.value;
+  };
+
+  const getSouthValue = (key: string): any => {
+    if (!southEnclosureData) return null;
+    const item = southEnclosureData.data.find(d => d.key === key);
+    if (item === undefined) {
+      // Debug: log missing keys
+      const allKeys = southEnclosureData.data.map(d => d.key);
       if (!allKeys.includes(key)) {
         console.log(`Key "${key}" not found. Available keys:`, allKeys);
       }
@@ -337,10 +408,25 @@ export default function TurboSitterPage() {
         id: "south",
         name: "South Enclosure",
         details: {
-          lid: "Closed",
-          rain: "Dry",
-          eStop: "OK",
-          temp: "—",
+          lidA: getSouthValue('RoofAOpening') ? "Opening" : 
+                getSouthValue('RoofAClosing') ? "Closing" : 
+                getSouthValue('RoofAPos') === 0 ? "Closed" : "Open",
+          lidB: getSouthValue('RoofBOpening') ? "Opening" : 
+                getSouthValue('RoofBClosing') ? "Closing" : 
+                getSouthValue('RoofBPos') === 0 ? "Closed" : "Open",
+          roofAPos: getSouthValue('RoofAPos') ?? null,
+          roofBPos: getSouthValue('RoofBPos') ?? null,
+          overcurrentA: (() => {
+            const val = getSouthValue('RoofAOverCurrent');
+            if (val === null || val === undefined) return null;
+            return val === false ? "FALSE" : "TRUE";
+          })(),
+          overcurrentB: (() => {
+            const val = getSouthValue('RoofBOverCurrent');
+            if (val === null || val === undefined) return null;
+            return val === false ? "FALSE" : "TRUE";
+          })(),
+          eStop: getSouthValue('EStop OK') === true ? "OK" : "FAIL",
         },
         monitorSrc: "/feeds/south-monitor.m3u8",
         mounts: [
@@ -355,7 +441,7 @@ export default function TurboSitterPage() {
         ],
       },
     ],
-    [centralEnclosureData]
+    [centralEnclosureData, southEnclosureData]
   );
 
   return (
@@ -476,11 +562,17 @@ export default function TurboSitterPage() {
                           Loading...
                         </div>
                       ) : ptzImage ? (
-                        <img
-                          src={ptzImage}
-                          alt="Latest site camera capture"
-                          className="w-full h-full object-contain"
-                        />
+                        <button
+                          type="button"
+                          onClick={() => setPtzLightboxOpen(true)}
+                          className="w-full h-full flex items-center justify-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+                        >
+                          <img
+                            src={ptzImage}
+                            alt="Latest site camera capture"
+                            className="w-full h-full object-contain"
+                          />
+                        </button>
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center text-slate-500">
                           No image available
@@ -552,7 +644,7 @@ export default function TurboSitterPage() {
                       </span>
                     </button>
 
-                    {enc.id === "central" ? (
+                    {enc.id === "central" || enc.id === "south" ? (
                       <div className="px-5 py-4 space-y-4">
                         {/* Row 1: A items */}
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -656,7 +748,11 @@ export default function TurboSitterPage() {
                                     Loading...
                                   </div>
                                 ) : northAxisImage ? (
-                                  <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                                  <button
+                                    type="button"
+                                    onClick={() => setEnclosureLightbox({ url: northAxisImage, rotate90: true })}
+                                    className="absolute inset-0 flex items-center justify-center overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+                                  >
                                     <div className="aspect-square h-full overflow-hidden flex items-center justify-center">
                                       <img
                                         src={northAxisImage}
@@ -665,7 +761,7 @@ export default function TurboSitterPage() {
                                         className="h-full w-full object-contain"
                                       />
                                     </div>
-                                  </div>
+                                  </button>
                                 ) : (
                                   <div className="absolute inset-0 flex items-center justify-center text-slate-500">
                                     No image available
@@ -704,11 +800,17 @@ export default function TurboSitterPage() {
                                     Loading...
                                   </div>
                                 ) : centralAxisImage ? (
-                                  <img
-                                    src={centralAxisImage}
-                                    alt="Central enclosure camera"
-                                    className="w-full h-full object-contain"
-                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setEnclosureLightbox({ url: centralAxisImage, rotate90: false })}
+                                    className="absolute inset-0 w-full h-full flex items-center justify-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+                                  >
+                                    <img
+                                      src={centralAxisImage}
+                                      alt="Central enclosure camera"
+                                      className="w-full h-full object-contain"
+                                    />
+                                  </button>
                                 ) : (
                                   <div className="absolute inset-0 flex items-center justify-center text-slate-500">
                                     No image available
@@ -747,7 +849,11 @@ export default function TurboSitterPage() {
                                     Loading...
                                   </div>
                                 ) : southAxisImage ? (
-                                  <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                                  <button
+                                    type="button"
+                                    onClick={() => setEnclosureLightbox({ url: southAxisImage, rotate90: true })}
+                                    className="absolute inset-0 flex items-center justify-center overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+                                  >
                                     <div className="aspect-square h-full overflow-hidden flex items-center justify-center">
                                       <img
                                         src={southAxisImage}
@@ -756,7 +862,7 @@ export default function TurboSitterPage() {
                                         className="h-full w-full object-contain"
                                       />
                                     </div>
-                                  </div>
+                                  </button>
                                 ) : (
                                   <div className="absolute inset-0 flex items-center justify-center text-slate-500">
                                     No image available
@@ -779,6 +885,59 @@ export default function TurboSitterPage() {
               </div>
             </div>
           </div>
+
+          {/* PTZ image lightbox */}
+          {ptzLightboxOpen && ptzImage && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+              onClick={() => setPtzLightboxOpen(false)}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Site camera full size"
+            >
+              <button
+                type="button"
+                onClick={() => setPtzLightboxOpen(false)}
+                className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white"
+                aria-label="Close"
+              >
+                <Shrink className="h-6 w-6" />
+              </button>
+              <img
+                src={ptzImage}
+                alt="Latest site camera capture (full size)"
+                className="max-w-full max-h-[90vh] object-contain"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          )}
+
+          {/* Enclosure image lightbox (north / central / south) */}
+          {enclosureLightbox && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+              onClick={() => setEnclosureLightbox(null)}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Enclosure camera full size"
+            >
+              <button
+                type="button"
+                onClick={() => setEnclosureLightbox(null)}
+                className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white"
+                aria-label="Close"
+              >
+                <Shrink className="h-6 w-6" />
+              </button>
+              <img
+                src={enclosureLightbox.url}
+                alt="Enclosure camera (full size)"
+                className="max-w-full max-h-[90vh] object-contain"
+                style={enclosureLightbox.rotate90 ? { transform: "rotate(90deg)" } : undefined}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          )}
         </main>
       </SidebarInset>
     </SidebarProvider>

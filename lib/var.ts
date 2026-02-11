@@ -7,9 +7,9 @@ export const varObj = {
         T2: "/home/turbo/web-services/new-mexico/south-enclosure/axis-cam",
     },
     ENC_DATA: {
-        T1: "/home/turbo/web-services/new-mexico/north-enclosure/data",
-        T2: '/home/turbo/web-services/new-mexico/central-enclosure/data',
-        T3: '/home/turbo/web-services/new-mexico/south-enclosure/data',
+        T3: "/home/turbo/web-services/new-mexico/north-enclosure/data",
+        T1: '/home/turbo/web-services/new-mexico/central-enclosure/data',
+        T2: '/home/turbo/web-services/new-mexico/south-enclosure/data',
     },
 } as const;
 
