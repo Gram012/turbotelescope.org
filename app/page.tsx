@@ -72,32 +72,30 @@ export default function TurboSitterPage() {
   // North Cam
   const [northAxisImage, setNorthAxisImage] = useState<string | null>(null);
   const [northAxisLoading, setNorthAxisLoading] = useState(false);
-  const [northAxisUpdated, setNorthAxisUpdated] = useState<Date | null>(
-    null
-  );
+  const [northAxisUpdated, setNorthAxisUpdated] = useState<Date | null>(null);
 
   // Central Cam
   const [centralAxisImage, setCentralAxisImage] = useState<string | null>(null);
   const [centralAxisLoading, setCentralAxisLoading] = useState(false);
-  const [centralAxisUpdated, setCentralAxisUpdated] = useState<Date | null>(
-    null
-  );
+  const [centralAxisUpdated, setCentralAxisUpdated] = useState<Date | null>(null);
 
   // South Cam
   const [southAxisImage, setSouthAxisImage] = useState<string | null>(null);
   const [southAxisLoading, setSouthAxisLoading] = useState(false);
-  const [southAxisUpdated, setSouthAxisUpdated] = useState<Date | null>(
-    null
-  );
+  const [southAxisUpdated, setSouthAxisUpdated] = useState<Date | null>(null);
 
   // Enclosure image lightbox (north / central / south); rotate90 for north/south
   const [enclosureLightbox, setEnclosureLightbox] = useState<{ url: string; rotate90: boolean } | null>(null);
 
-  //Central Enclosure Data
+  // North Enclosure Data
+  const [northEnclosureData, setNorthEnclosureData] = useState<EnclosureData | null>(null);
+  const [northEnclosureLoading, setNorthEnclosureLoading] = useState(false);
+
+  // Central Enclosure Data
   const [centralEnclosureData, setCentralEnclosureData] = useState<EnclosureData | null>(null);
   const [centralEnclosureLoading, setCentralEnclosureLoading] = useState(false);
 
-  //South Enclosure Data
+  // South Enclosure Data
   const [southEnclosureData, setSouthEnclosureData] = useState<EnclosureData | null>(null);
   const [southEnclosureLoading, setSouthEnclosureLoading] = useState(false);
 
@@ -113,14 +111,12 @@ export default function TurboSitterPage() {
         return;
       }
 
-      // Helper function to safely convert to number or null
       const toNumber = (value: any): number | null => {
         if (value === null || value === undefined) return null;
         const num = typeof value === 'number' ? value : Number(value);
         return isNaN(num) ? null : num;
       };
 
-      // Map the key-value pairs to WeatherRow
       const dataMap = new Map(result.data.map((item: { key: string; value: any }) => [item.key, item.value]));
       
       const weatherRow: WeatherRow = {
@@ -152,7 +148,6 @@ export default function TurboSitterPage() {
 
   useEffect(() => {
     fetchWeatherData();
-    // Refresh weather data every 5 minutes (300000ms)
     const interval = setInterval(fetchWeatherData, 300000);
     return () => clearInterval(interval);
   }, []);
@@ -169,9 +164,9 @@ export default function TurboSitterPage() {
     } finally {
       setPTZimageLoading(false);
     }
-  }; 
+  };
 
-    const fetchNorthAxisImage = async () => {
+  const fetchNorthAxisImage = async () => {
     setNorthAxisLoading(true);
     try {
       const res = await fetch(apiUrl(`/api/Axis/North?ts=${Date.now()}`));
@@ -199,7 +194,7 @@ export default function TurboSitterPage() {
     }
   };
 
-    const fetchSouthAxisImage = async () => {
+  const fetchSouthAxisImage = async () => {
     setSouthAxisLoading(true);
     try {
       const res = await fetch(apiUrl(`/api/Axis/South?ts=${Date.now()}`));
@@ -213,17 +208,41 @@ export default function TurboSitterPage() {
     }
   };
 
+  const fetchNorthEnclosureData = async () => {
+    setNorthEnclosureLoading(true);
+    try {
+      const response = await fetch(apiUrl('/api/Enclosures/North'));
+      const data = await response.json();
+      setNorthEnclosureData(data);
+      if (data?.data) {
+        const allKeys = data.data.map((d: any) => d.key);
+        console.log('Available north enclosure data keys:', allKeys);
+        const overcurrentKeys = allKeys.filter((k: string) =>
+          k.toLowerCase().includes('overcurrent')
+        );
+        if (overcurrentKeys.length > 0) {
+          console.log('North overcurrent-related keys found:', overcurrentKeys);
+        } else {
+          console.warn('No north overcurrent keys found in data');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching north enclosure data:', error);
+    } finally {
+      setNorthEnclosureLoading(false);
+    }
+  };
+
   const fetchCentralEnclosureData = async () => {
     setCentralEnclosureLoading(true);
     try {
       const response = await fetch(apiUrl('/api/Enclosures/Central'));
       const data = await response.json();
       setCentralEnclosureData(data);
-      // Debug: log all available keys
       if (data?.data) {
         const allKeys = data.data.map((d: any) => d.key);
         console.log('Available central enclosure data keys:', allKeys);
-        const overcurrentKeys = allKeys.filter((k: string) => 
+        const overcurrentKeys = allKeys.filter((k: string) =>
           k.toLowerCase().includes('overcurrent')
         );
         if (overcurrentKeys.length > 0) {
@@ -245,7 +264,6 @@ export default function TurboSitterPage() {
       const response = await fetch(apiUrl('/api/Enclosures/South'));
       const data = await response.json();
       setSouthEnclosureData(data);
-      // Debug: log all available keys
       if (data?.data) {
         const allKeys = data.data.map((d: any) => d.key);
         console.log('Available south enclosure data keys:', allKeys);
@@ -259,7 +277,7 @@ export default function TurboSitterPage() {
 
   useEffect(() => {
     fetchPTZimage();
-    const interval = setInterval(fetchPTZimage, 60000); // refresh every 1 min
+    const interval = setInterval(fetchPTZimage, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -291,7 +309,7 @@ export default function TurboSitterPage() {
 
   useEffect(() => {
     fetchNorthAxisImage();
-    const interval = setInterval(fetchNorthAxisImage, 60000); // refresh every 5s
+    const interval = setInterval(fetchNorthAxisImage, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -308,22 +326,39 @@ export default function TurboSitterPage() {
   }, []);
 
   useEffect(() => {
+    fetchNorthEnclosureData();
+    const interval = setInterval(fetchNorthEnclosureData, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     fetchCentralEnclosureData();
-    const interval = setInterval(fetchCentralEnclosureData, 5000) // refresh every 5s
+    const interval = setInterval(fetchCentralEnclosureData, 5000);
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     fetchSouthEnclosureData();
-    const interval = setInterval(fetchSouthEnclosureData, 5000) // refresh every 5s
+    const interval = setInterval(fetchSouthEnclosureData, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const getNorthValue = (key: string): any => {
+    if (!northEnclosureData) return null;
+    const item = northEnclosureData.data.find(d => d.key === key);
+    if (item === undefined) {
+      const allKeys = northEnclosureData.data.map(d => d.key);
+      if (!allKeys.includes(key)) {
+        console.log(`Key "${key}" not found. Available keys:`, allKeys);
+      }
+    }
+    return item?.value;
+  };
 
   const getCentralValue = (key: string): any => {
     if (!centralEnclosureData) return null;
     const item = centralEnclosureData.data.find(d => d.key === key);
     if (item === undefined) {
-      // Debug: log missing keys
       const allKeys = centralEnclosureData.data.map(d => d.key);
       if (!allKeys.includes(key)) {
         console.log(`Key "${key}" not found. Available keys:`, allKeys);
@@ -336,7 +371,6 @@ export default function TurboSitterPage() {
     if (!southEnclosureData) return null;
     const item = southEnclosureData.data.find(d => d.key === key);
     if (item === undefined) {
-      // Debug: log missing keys
       const allKeys = southEnclosureData.data.map(d => d.key);
       if (!allKeys.includes(key)) {
         console.log(`Key "${key}" not found. Available keys:`, allKeys);
@@ -351,10 +385,25 @@ export default function TurboSitterPage() {
         id: "north",
         name: "North Enclosure",
         details: {
-          lid: "Closed",
-          rain: "Dry",
-          eStop: "OK",
-          temp: "—",
+          lidA: getNorthValue('RoofAOpening') ? "Opening" :
+                getNorthValue('RoofAClosing') ? "Closing" :
+                getNorthValue('RoofAPos') === 0 ? "Closed" : "Open",
+          lidB: getNorthValue('RoofBOpening') ? "Opening" :
+                getNorthValue('RoofBClosing') ? "Closing" :
+                getNorthValue('RoofBPos') === 0 ? "Closed" : "Open",
+          roofAPos: getNorthValue('RoofAPos') ?? null,
+          roofBPos: getNorthValue('RoofBPos') ?? null,
+          overcurrentA: (() => {
+            const val = getNorthValue('RoofAOverCurrent');
+            if (val === null || val === undefined) return null;
+            return val === false ? "FALSE" : "TRUE";
+          })(),
+          overcurrentB: (() => {
+            const val = getNorthValue('RoofBOverCurrent');
+            if (val === null || val === undefined) return null;
+            return val === false ? "FALSE" : "TRUE";
+          })(),
+          eStop: getNorthValue('EStop OK') === true ? "OK" : "FAIL",
         },
         monitorSrc: "/feeds/north-monitor.m3u8",
         mounts: [
@@ -372,11 +421,11 @@ export default function TurboSitterPage() {
         id: "central",
         name: "Central Enclosure",
         details: {
-          lidA: getCentralValue('RoofAOpening') ? "Opening" : 
-                getCentralValue('RoofAClosing') ? "Closing" : 
+          lidA: getCentralValue('RoofAOpening') ? "Opening" :
+                getCentralValue('RoofAClosing') ? "Closing" :
                 getCentralValue('RoofAPos') === 0 ? "Closed" : "Open",
-          lidB: getCentralValue('RoofBOpening') ? "Opening" : 
-                getCentralValue('RoofBClosing') ? "Closing" : 
+          lidB: getCentralValue('RoofBOpening') ? "Opening" :
+                getCentralValue('RoofBClosing') ? "Closing" :
                 getCentralValue('RoofBPos') === 0 ? "Closed" : "Open",
           roofAPos: getCentralValue('RoofAPos') ?? null,
           roofBPos: getCentralValue('RoofBPos') ?? null,
@@ -408,11 +457,11 @@ export default function TurboSitterPage() {
         id: "south",
         name: "South Enclosure",
         details: {
-          lidA: getSouthValue('RoofAOpening') ? "Opening" : 
-                getSouthValue('RoofAClosing') ? "Closing" : 
+          lidA: getSouthValue('RoofAOpening') ? "Opening" :
+                getSouthValue('RoofAClosing') ? "Closing" :
                 getSouthValue('RoofAPos') === 0 ? "Closed" : "Open",
-          lidB: getSouthValue('RoofBOpening') ? "Opening" : 
-                getSouthValue('RoofBClosing') ? "Closing" : 
+          lidB: getSouthValue('RoofBOpening') ? "Opening" :
+                getSouthValue('RoofBClosing') ? "Closing" :
                 getSouthValue('RoofBPos') === 0 ? "Closed" : "Open",
           roofAPos: getSouthValue('RoofAPos') ?? null,
           roofBPos: getSouthValue('RoofBPos') ?? null,
@@ -441,7 +490,7 @@ export default function TurboSitterPage() {
         ],
       },
     ],
-    [centralEnclosureData, southEnclosureData]
+    [northEnclosureData, centralEnclosureData, southEnclosureData]
   );
 
   return (
@@ -499,37 +548,19 @@ export default function TurboSitterPage() {
                     <div className="text-slate-500">Loading…</div>
                   ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      <KV
-                        label="Air Temp"
-                        value={fmt(row?.temperature, "°C")}
-                      />
+                      <KV label="Air Temp" value={fmt(row?.temperature, "°C")} />
                       <KV label="Dew Point" value={fmt(row?.dewpoint, "°C")} />
                       <KV label="Humidity" value={pct(row?.humidity)} />
                       <KV label="Pressure" value={fmt(row?.pressure, "hPa")} />
-                      <KV
-                        label="Wind Speed"
-                        value={fmt(row?.windspeed, "m/s")}
-                      />
+                      <KV label="Wind Speed" value={fmt(row?.windspeed, "m/s")} />
                       <KV label="Wind Gust" value={fmt(row?.windgust, "m/s")} />
-                      <KV
-                        label="Wind Dir"
-                        value={fmt(row?.winddirection, "°")}
-                      />
+                      <KV label="Wind Dir" value={fmt(row?.winddirection, "°")} />
                       <KV label="Cloud Cover" value={pct(row?.cloudcover)} />
-                      <KV
-                        label="Rain Rate"
-                        value={fmt(row?.rainrate, "mm/hr")}
-                      />
+                      <KV label="Rain Rate" value={fmt(row?.rainrate, "mm/hr")} />
                       <KV label="Sky Temp" value={fmt(row?.skytemp, "°C")} />
-                      <KV
-                        label="Sky Brightness"
-                        value={fmt(row?.skybrightness, "lux")}
-                      />
+                      <KV label="Sky Brightness" value={fmt(row?.skybrightness, "lux")} />
                       <KV label="Sky Quality" value={fmt(row?.skyquality)} />
-                      <KV
-                        label="Star FWHM"
-                        value={fmt(row?.starfwhm, "arcsec")}
-                      />
+                      <KV label="Star FWHM" value={fmt(row?.starfwhm, "arcsec")} />
                       <KV label="Avg Period" value={fmt(row?.avgperiod, "s")} />
                     </div>
                   )}
@@ -548,11 +579,7 @@ export default function TurboSitterPage() {
                         disabled={ptzImageLoading}
                         className="inline-flex items-center gap-2 border border-slate-200 px-2 py-1 rounded-lg text-xs hover:bg-slate-50 disabled:opacity-50"
                       >
-                        <RefreshCw
-                          className={`w-3 h-3 ${
-                            ptzImageLoading ? "animate-spin" : ""
-                          }`}
-                        />
+                        <RefreshCw className={`w-3 h-3 ${ptzImageLoading ? "animate-spin" : ""}`} />
                         Refresh
                       </button>
                     </div>
@@ -644,58 +671,43 @@ export default function TurboSitterPage() {
                       </span>
                     </button>
 
-                    {enc.id === "central" || enc.id === "south" ? (
-                      <div className="px-5 py-4 space-y-4">
-                        {/* Row 1: A items */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          <Badge label="Roof A" value={enc.details.lidA || "—"} />
-                          <Badge
-                            label="Roof A Pos"
-                            value={enc.details.roofAPos !== null && enc.details.roofAPos !== undefined ? enc.details.roofAPos.toString() : "—"}
-                          />
-                          <Badge
-                            label="Overcurrent A"
-                            value={enc.details.overcurrentA || "—"}
-                            status={enc.details.overcurrentA === "FALSE" ? "ok" : enc.details.overcurrentA === "TRUE" ? "fail" : undefined}
-                          />
-                        </div>
-                        {/* Row 2: B items */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          <Badge label="Roof B" value={enc.details.lidB || "—"} />
-                          <Badge
-                            label="Roof B Pos"
-                            value={enc.details.roofBPos !== null && enc.details.roofBPos !== undefined ? enc.details.roofBPos.toString() : "—"}
-                          />
-                          <Badge
-                            label="Overcurrent B"
-                            value={enc.details.overcurrentB || "—"}
-                            status={enc.details.overcurrentB === "FALSE" ? "ok" : enc.details.overcurrentB === "TRUE" ? "fail" : undefined}
-                          />
-                        </div>
-                        {/* Row 3: EStop */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          <Badge
-                            label="EStop"
-                            value={enc.details.eStop || "—"}
-                            status={enc.details.eStop === "OK" ? "ok" : enc.details.eStop === "FAIL" ? "fail" : undefined}
-                          />
-                        </div>
+                    {/* All three enclosures now share the same badge layout */}
+                    <div className="px-5 py-4 space-y-4">
+                      {/* Row 1: A items */}
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <Badge label="Roof A" value={enc.details.lidA || "—"} />
+                        <Badge
+                          label="Roof A Pos"
+                          value={enc.details.roofAPos !== null && enc.details.roofAPos !== undefined ? enc.details.roofAPos.toString() : "—"}
+                        />
+                        <Badge
+                          label="Overcurrent A"
+                          value={enc.details.overcurrentA || "—"}
+                          status={enc.details.overcurrentA === "FALSE" ? "ok" : enc.details.overcurrentA === "TRUE" ? "fail" : undefined}
+                        />
                       </div>
-                    ) : (
-                      <div className="px-5 py-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <Badge label="Lid" value={enc.details.lid || "—"} />
-                        <Badge label="Rain" value={enc.details.rain || "—"} />
+                      {/* Row 2: B items */}
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <Badge label="Roof B" value={enc.details.lidB || "—"} />
+                        <Badge
+                          label="Roof B Pos"
+                          value={enc.details.roofBPos !== null && enc.details.roofBPos !== undefined ? enc.details.roofBPos.toString() : "—"}
+                        />
+                        <Badge
+                          label="Overcurrent B"
+                          value={enc.details.overcurrentB || "—"}
+                          status={enc.details.overcurrentB === "FALSE" ? "ok" : enc.details.overcurrentB === "TRUE" ? "fail" : undefined}
+                        />
+                      </div>
+                      {/* Row 3: EStop */}
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         <Badge
                           label="EStop"
                           value={enc.details.eStop || "—"}
                           status={enc.details.eStop === "OK" ? "ok" : enc.details.eStop === "FAIL" ? "fail" : undefined}
                         />
-                        <Badge
-                          label="Internal Temp"
-                          value={enc.details.temp || "—"}
-                        />
                       </div>
-                    )}
+                    </div>
 
                     {open[enc.id] && (
                       <div className="px-5 pb-5 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -734,11 +746,7 @@ export default function TurboSitterPage() {
                                   disabled={northAxisLoading}
                                   className="inline-flex items-center gap-2 border border-slate-200 px-2 py-1 rounded-lg text-xs hover:bg-slate-50 disabled:opacity-50"
                                 >
-                                  <RefreshCw
-                                    className={`w-3 h-3 ${
-                                      northAxisLoading ? "animate-spin" : ""
-                                    }`}
-                                  />
+                                  <RefreshCw className={`w-3 h-3 ${northAxisLoading ? "animate-spin" : ""}`} />
                                   Refresh
                                 </button>
                               </div>
@@ -770,8 +778,7 @@ export default function TurboSitterPage() {
                               </div>
                               {northAxisUpdated && (
                                 <div className="text-xs text-slate-500 px-4 py-2 border-t border-slate-100">
-                                  Last updated:{" "}
-                                  {northAxisUpdated.toLocaleTimeString()}
+                                  Last updated: {northAxisUpdated.toLocaleTimeString()}
                                 </div>
                               )}
                             </>
@@ -786,11 +793,7 @@ export default function TurboSitterPage() {
                                   disabled={centralAxisLoading}
                                   className="inline-flex items-center gap-2 border border-slate-200 px-2 py-1 rounded-lg text-xs hover:bg-slate-50 disabled:opacity-50"
                                 >
-                                  <RefreshCw
-                                    className={`w-3 h-3 ${
-                                      centralAxisLoading ? "animate-spin" : ""
-                                    }`}
-                                  />
+                                  <RefreshCw className={`w-3 h-3 ${centralAxisLoading ? "animate-spin" : ""}`} />
                                   Refresh
                                 </button>
                               </div>
@@ -819,8 +822,7 @@ export default function TurboSitterPage() {
                               </div>
                               {centralAxisUpdated && (
                                 <div className="text-xs text-slate-500 px-4 py-2 border-t border-slate-100">
-                                  Last updated:{" "}
-                                  {centralAxisUpdated.toLocaleTimeString()}
+                                  Last updated: {centralAxisUpdated.toLocaleTimeString()}
                                 </div>
                               )}
                             </>
@@ -835,11 +837,7 @@ export default function TurboSitterPage() {
                                   disabled={southAxisLoading}
                                   className="inline-flex items-center gap-2 border border-slate-200 px-2 py-1 rounded-lg text-xs hover:bg-slate-50 disabled:opacity-50"
                                 >
-                                  <RefreshCw
-                                    className={`w-3 h-3 ${
-                                      southAxisLoading ? "animate-spin" : ""
-                                    }`}
-                                  />
+                                  <RefreshCw className={`w-3 h-3 ${southAxisLoading ? "animate-spin" : ""}`} />
                                   Refresh
                                 </button>
                               </div>
@@ -871,8 +869,7 @@ export default function TurboSitterPage() {
                               </div>
                               {southAxisUpdated && (
                                 <div className="text-xs text-slate-500 px-4 py-2 border-t border-slate-100">
-                                  Last updated:{" "}
-                                  {southAxisUpdated.toLocaleTimeString()}
+                                  Last updated: {southAxisUpdated.toLocaleTimeString()}
                                 </div>
                               )}
                             </>
@@ -954,12 +951,12 @@ function KV({ label, value }: { label: string; value: string | number }) {
 }
 
 function Badge({ label, value, status }: { label: string; value: string; status?: "ok" | "fail" }) {
-  const statusClasses = status === "ok" 
-    ? "bg-green-50 border-green-200 text-green-700" 
-    : status === "fail" 
-    ? "bg-red-50 border-red-200 text-red-700" 
+  const statusClasses = status === "ok"
+    ? "bg-green-50 border-green-200 text-green-700"
+    : status === "fail"
+    ? "bg-red-50 border-red-200 text-red-700"
     : "bg-slate-50 border-slate-200 text-slate-700";
-  
+
   return (
     <div className={`flex items-center justify-between text-sm border rounded-lg px-3 py-1 ${statusClasses}`}>
       <span>{label}</span>
