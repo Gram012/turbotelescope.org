@@ -849,17 +849,17 @@ export default function TurboSitterPage() {
                                 ) : southAxisImage ? (
                                   <button
                                     type="button"
-                                    onClick={() => setEnclosureLightbox({ url: southAxisImage, rotate90: true })}
+                                    onClick={() => setEnclosureLightbox({ url: southAxisImage, rotate90: false })}
                                     className="absolute inset-0 flex items-center justify-center overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
                                   >
-                                    <div className="aspect-square h-full overflow-hidden flex items-center justify-center">
+                                    {/* <div className="aspect-square h-full overflow-hidden flex items-center justify-center"> */}
                                       <img
                                         src={southAxisImage}
                                         alt="South enclosure camera"
-                                        style={{ transform: "rotate(90deg)" }}
+                                        // style={{ transform: "rotate(90deg)" }}
                                         className="h-full w-full object-contain"
                                       />
-                                    </div>
+                                    {/* </div> */}
                                   </button>
                                 ) : (
                                   <div className="absolute inset-0 flex items-center justify-center text-slate-500">
